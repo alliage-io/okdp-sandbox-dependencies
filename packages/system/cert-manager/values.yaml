@@ -1,0 +1,43 @@
+# Platform values (platform/platform-values.yaml). Never set per instance.
+global:
+  okdp: {}
+
+# External connections (none used by this chart).
+connections: {}
+
+# Which parts this release installs. The CRDs of one part must exist before the
+# objects of the next are applied, so the platform installs this chart three
+# times, one layer each (see README):
+#   00 certManager               cert-manager and the CRDs (trust-manager's Bundle included)
+#   10 trust + issuers           trust-manager, the ClusterIssuers
+#   20 trust.bundle              the CA Bundle (validated by trust-manager's webhook)
+certManager:
+  enabled: true
+
+# Label the CRDs and controllers okdp.io/protected=true: the tools chart's
+# ValidatingAdmissionPolicy then refuses to delete them (former KuboCD protected).
+protected: true
+
+trust:
+  # trust-manager (needs the cert-manager CRDs: a layer above certManager).
+  enabled: false
+  bundle:
+    # The Bundle of the issuers' CA certificates (needs trust-manager's webhook up).
+    enabled: false
+    name: certs-bundle
+    target:
+      configMap:
+        enabled: false
+        key: root-certs.pem
+      secret:
+        enabled: false
+        key: ca.crt
+
+issuers:
+  # The ClusterIssuers below (need the cert-manager webhook up).
+  enabled: false
+  # CA issuers from an existing CA: {name, ca_crt, ca_key} (base64 PEM).
+  caClusterIssuers: []
+  # Self-signed CA issuers: {name, certificate: {commonName, organization, country,
+  # validity, algorithm, size}}.
+  selfSignedClusterIssuers: []

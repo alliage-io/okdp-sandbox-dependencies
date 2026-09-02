@@ -56,3 +56,6 @@ Chart.lock
 **/charts/*.tgz
 # okdp-chart-test.sh output
 .okdp-rendered/
+
+# Upstream charts downloaded from vendor.yaml by scripts/vendor-charts.sh.
+/packages/*/*/vendor/

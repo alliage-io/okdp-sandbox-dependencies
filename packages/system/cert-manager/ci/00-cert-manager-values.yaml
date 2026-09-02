@@ -1,0 +1,7 @@
+# Layer 00: cert-manager and the CRDs (component 00-cert-manager).
+global:
+  okdp:
+    ingress: {suffix: okdp.sandbox, className: nginx}
+    certificateIssuers: {selfSigned: {name: default-issuer}}
+certManager:
+  enabled: true

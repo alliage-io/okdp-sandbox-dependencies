@@ -1,0 +1,3 @@
+{{- if .Values.issuers.enabled }}
+{{ include "okdp.vendor.render" (dict "ctx" . "chart" "cert-issuers" "values" (include "cert-manager.issuers.values" . | fromYaml)) }}
+{{- end }}

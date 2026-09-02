@@ -1,0 +1,12 @@
+# Upstream charts rendered by okdp.vendor.render (templates/*.yaml).
+# Refresh vendor/ with: scripts/vendor-charts.sh packages/system/cert-manager
+charts:
+  - name: cert-manager
+    repository: https://charts.jetstack.io
+    version: v1.21.2
+  - name: trust-manager
+    repository: https://charts.jetstack.io
+    version: v0.25.0
+  - name: cert-issuers
+    repository: oci://quay.io/okdp/charts
+    version: 0.2.0

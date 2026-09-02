@@ -1,0 +1,5 @@
+{{- if .Values.certManager.enabled }}
+{{ include "cert-manager.protect" (dict "enabled" .Values.protected "rendered" (include "okdp.vendor.render" (dict "ctx" . "chart" "cert-manager" "values" (include "cert-manager.upstream.values" . | fromYaml)))) }}
+{{- /* The Bundle CRD of trust-manager, so that the trust layer can create Bundles. */}}
+{{ include "cert-manager.protect" (dict "enabled" .Values.protected "rendered" (include "cert-manager.onlyKinds" (dict "kinds" (list "CustomResourceDefinition") "rendered" (include "okdp.vendor.render" (dict "ctx" . "chart" "trust-manager" "values" (include "cert-manager.trust.values" (dict "ctx" . "crdsOnly" true) | fromYaml)))))) }}
+{{- end }}

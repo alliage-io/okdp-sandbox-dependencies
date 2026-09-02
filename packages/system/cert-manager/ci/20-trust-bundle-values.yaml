@@ -1,0 +1,17 @@
+# Layer 20: the CA bundle (component 20-trust-bundle).
+global:
+  okdp:
+    ingress: {suffix: okdp.sandbox, className: nginx}
+certManager:
+  enabled: false
+protected: false
+trust:
+  bundle:
+    enabled: true
+    name: certs-bundle
+    target:
+      configMap: {enabled: true, key: root-certs.pem}
+      secret: {enabled: true}
+issuers:
+  selfSignedClusterIssuers:
+    - name: default-issuer

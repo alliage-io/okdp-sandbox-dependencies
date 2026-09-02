@@ -1,0 +1,78 @@
+# cert-manager
+
+OKDP chart of [cert-manager](https://cert-manager.io/) with
+[trust-manager](https://cert-manager.io/docs/trust/trust-manager/) and the OKDP
+cluster issuers (`cert-issuers`). It issues the TLS certificates of the platform
+ingresses (`global.okdp.certificateIssuers.selfSigned.name`) and distributes the
+issuers' CA certificates to every namespace.
+
+It renders three upstream charts vendored under `vendor/` (see `vendor.yaml`):
+cert-manager v1.21.2, trust-manager v0.25.0 and `oci://quay.io/okdp/charts/cert-issuers`
+0.2.0, with values computed in `templates/_values.tpl`.
+
+## One chart, three platform components
+
+Helm cannot apply a custom resource whose CRD is created by the same release, and
+trust-manager validates Bundles with a webhook (`failurePolicy: Fail`) that must be
+running first. KuboCD ordered the modules inside one package; now each part is a
+platform component of its own layer (`platform/components/<NN>-<name>`, all in the
+`cert-manager` namespace, the one trust-manager reads the CA secrets from):
+
+| Component | Values | Installs |
+|---|---|---|
+| `00-cert-manager` | `certManager.enabled: true` (default) | cert-manager, its CRDs and trust-manager's Bundle CRD |
+| `10-cert-issuers` | `certManager.enabled: false`, `trust.enabled`, `issuers.enabled` | trust-manager, the ClusterIssuers and their CA Certificates |
+| `20-trust-bundle` | `certManager.enabled: false`, `trust.bundle.enabled` | the Bundle (sources: the issuers listed in `issuers.*`) |
+
+`ci/*-values.yaml` are the three configurations used by the sandbox.
+
+## Parameters
+
+| Parameter | Default | Description |
+|---|---|---|
+| `certManager.enabled` | `true` | cert-manager, its CRDs (kept on uninstall) and the Bundle CRD. |
+| `protected` | `true` | Label CRDs and controllers `okdp.io/protected=true` (deletion refused by the tools chart's ValidatingAdmissionPolicy). |
+| `trust.enabled` | `false` | trust-manager. |
+| `trust.bundle.enabled` | `false` | The Bundle `trust.bundle.name` of the issuers' CA certificates plus the default CAs. |
+| `trust.bundle.name` | `certs-bundle` | Bundle name (also the only Secret trust-manager may write). |
+| `trust.bundle.target.configMap` / `.secret` | off, `root-certs.pem` / `ca.crt` | Bundle targets; a PKCS#12 `bundle.p12` is always added. |
+| `issuers.enabled` | `false` | Create the ClusterIssuers. |
+| `issuers.selfSignedClusterIssuers` | `[]` | `{name, certificate: {commonName, organization, country, validity, algorithm, size}}` |
+| `issuers.caClusterIssuers` | `[]` | `{name, ca_crt, ca_key}` (base64 PEM) |
+
+## Changes from the KuboCD package
+
+- The modules `main`, `trust`, `issuers` became three components of one chart (above);
+  the defaults install cert-manager only (they were `issuers.enabled: true`).
+- The Bundle is rendered by this chart (it was part of `cert-issuers`), one layer
+  above trust-manager.
+- trust-manager's webhook certificate comes from cert-manager (`helmCert` off): the
+  chart's generated certificate is non-deterministic (see `okdp-guard-allow.yaml`).
+- `protected: true` (KuboCD) is now the `okdp.io/protected` label.
+
+## Upstream versions
+
+cert-manager v1.21.2 and trust-manager v0.25.0 (the KuboCD package had v1.17.1 and
+v0.16.0). Upstream changes that matter here:
+
+- cert-manager 1.18: `Certificate.spec.privateKey.rotationPolicy` defaults to `Always`
+  (a new key on every renewal) and `revisionHistoryLimit` to 1.
+- cert-manager 1.21: the Helm chart no longer grants the controller `serviceaccounts/token`
+  (only needed by issuers authenticating as the controller's own ServiceAccount, none
+  here), the metrics port is renamed `http-metrics`, and the `cert-manager-edit`
+  aggregated role no longer creates ACME challenges and orders.
+- trust-manager: `Bundle` (`trust.cert-manager.io/v1alpha1`) is still the served and
+  stored API and the only CRD of the chart (the `ClusterBundle` successor is not
+  shipped yet), so `20-trust-bundle` is unchanged. The default CA package image is now
+  based on Debian Trixie (`useDefaultCAs`).
+
+## Tests
+
+```sh
+helm dependency build packages/system/cert-manager
+for f in packages/system/cert-manager/ci/*-values.yaml; do
+  helm lint packages/system/cert-manager -f "$f"
+  helm template cert-manager-cert-manager packages/system/cert-manager -n cert-manager -f "$f" >/dev/null
+done
+scripts/vendor-charts.sh --check packages/system/cert-manager
+```

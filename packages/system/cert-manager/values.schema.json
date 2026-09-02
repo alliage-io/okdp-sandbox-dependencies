@@ -1,0 +1,147 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "cert-manager",
+  "type": "object",
+  "properties": {
+    "global": {
+      "type": "object",
+      "description": "Platform values, from platform/platform-values.yaml (global.okdp)."
+    },
+    "connections": {
+      "type": "object",
+      "description": "External connections, one values layer per connection file. Not used by this chart."
+    },
+    "okdp-lib": {
+      "type": "object",
+      "description": "Values slot Helm creates for the okdp-lib library dependency. Not a parameter."
+    },
+    "certManager": {
+      "type": "object",
+      "title": "cert-manager",
+      "x-ui-group": "Install",
+      "x-ui-order": 1,
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "title": "cert-manager and CRDs",
+          "description": "cert-manager, its CRDs and the trust-manager Bundle CRD. The first layer (00)."
+        }
+      }
+    },
+    "protected": {
+      "type": "boolean",
+      "default": true,
+      "title": "Protected",
+      "description": "Label the CRDs and controllers okdp.io/protected=true: the ValidatingAdmissionPolicy of the tools chart refuses to delete them.",
+      "x-ui-group": "Install",
+      "x-ui-order": 2,
+      "x-ui-advanced": true
+    },
+    "trust": {
+      "type": "object",
+      "title": "trust-manager",
+      "x-ui-group": "Trust",
+      "x-ui-order": 1,
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "title": "trust-manager",
+          "description": "Install trust-manager. Needs the cert-manager CRDs: a layer above the one installing cert-manager."
+        },
+        "bundle": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false,
+              "title": "CA bundle",
+              "description": "The Bundle of the issuers' CA certificates. Needs trust-manager running: a layer above trust.enabled."
+            },
+            "name": {"type": "string", "default": "certs-bundle", "title": "Bundle name"},
+            "target": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "configMap": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "enabled": {"type": "boolean", "default": false},
+                    "key": {"type": "string", "default": "root-certs.pem"}
+                  }
+                },
+                "secret": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "enabled": {"type": "boolean", "default": false},
+                    "key": {"type": "string", "default": "ca.crt"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "issuers": {
+      "type": "object",
+      "title": "Cluster issuers",
+      "x-ui-group": "Issuers",
+      "x-ui-order": 1,
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "title": "Cluster issuers",
+          "description": "Create the ClusterIssuers below. Needs the cert-manager CRDs: a layer above the one installing cert-manager."
+        },
+        "caClusterIssuers": {
+          "type": "array",
+          "title": "CA issuers",
+          "items": {
+            "type": "object",
+            "required": ["name", "ca_crt", "ca_key"],
+            "additionalProperties": false,
+            "properties": {
+              "name": {"type": "string"},
+              "ca_crt": {"type": "string", "description": "Base64 PEM CA certificate."},
+              "ca_key": {"type": "string", "description": "Base64 PEM CA private key.", "x-ui-widget": "password"}
+            }
+          }
+        },
+        "selfSignedClusterIssuers": {
+          "type": "array",
+          "title": "Self-signed CA issuers",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "additionalProperties": false,
+            "properties": {
+              "name": {"type": "string"},
+              "certificate": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "commonName": {"type": "string", "default": "Self-Signed CA"},
+                  "organization": {"type": "string", "default": "OKDP"},
+                  "country": {"type": "string", "default": "US"},
+                  "validity": {"type": "string", "default": "8760h"},
+                  "algorithm": {"type": "string", "default": "ECDSA", "enum": ["ECDSA", "RSA", "Ed25519"]},
+                  "size": {"type": "integer", "default": 256}
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

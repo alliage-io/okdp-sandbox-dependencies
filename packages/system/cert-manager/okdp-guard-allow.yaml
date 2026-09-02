@@ -1,0 +1,12 @@
+# Reviewed uses of forbidden patterns in the vendored charts (okdp-chart-guard.sh).
+- file: vendor/trust-manager/templates/webhook.yaml
+  pattern: non-deterministic
+  reason: >-
+    genCA/genSignedCert for a Helm-generated webhook certificate. genCA is always
+    evaluated but its result is only emitted with helmCert, which the wrapper keeps
+    off (cert-manager issues the webhook certificate).
+  disabledBy: app.webhook.tls.helmCert.enabled=false
+- file: vendor/trust-manager/templates/deployment.yaml
+  pattern: non-deterministic
+  reason: randAlphaNum pod annotation rolling the pods on a Helm-generated certificate.
+  disabledBy: app.webhook.tls.helmCert.enabled=false

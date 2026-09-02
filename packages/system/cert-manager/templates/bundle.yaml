@@ -1,0 +1,37 @@
+{{- /*
+The CA Bundle (was rendered by cert-issuers with the issuers). It is separate
+because trust-manager's webhook validates it (failurePolicy Fail): it must be
+applied once trust-manager runs, one layer above. Its sources are the CA
+secrets of the issuers listed in issuers.* (enabled or not in this release).
+*/ -}}
+{{- $b := .Values.trust.bundle -}}
+{{- if and $b.enabled (or $b.target.configMap.enabled $b.target.secret.enabled) }}
+apiVersion: trust.cert-manager.io/v1alpha1
+kind: Bundle
+metadata:
+  name: {{ $b.name }}
+  labels:
+    {{- include "okdp.labels" . | nindent 4 }}
+spec:
+  sources:
+    - useDefaultCAs: true
+    {{- range concat (.Values.issuers.caClusterIssuers | default list) (.Values.issuers.selfSignedClusterIssuers | default list) }}
+    - secret:
+        name: {{ .name }}
+        key: tls.crt
+    {{- end }}
+  target:
+    {{- if $b.target.configMap.enabled }}
+    configMap:
+      key: {{ $b.target.configMap.key }}
+    {{- end }}
+    {{- if $b.target.secret.enabled }}
+    secret:
+      key: {{ $b.target.secret.key }}
+    {{- end }}
+    additionalFormats:
+      pkcs12:
+        key: bundle.p12
+    namespaceSelector:
+      matchLabels: {}
+{{- end }}

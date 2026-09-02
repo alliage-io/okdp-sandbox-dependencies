@@ -1,0 +1,28 @@
+# Layer 10: trust-manager and the cluster issuers (component 10-cert-issuers).
+global:
+  okdp:
+    ingress: {suffix: okdp.sandbox, className: nginx}
+    certificateIssuers: {selfSigned: {name: default-issuer}}
+certManager:
+  enabled: false
+trust:
+  enabled: true
+  bundle:
+    name: certs-bundle
+    target:
+      secret: {enabled: true}
+issuers:
+  enabled: true
+  selfSignedClusterIssuers:
+    - name: default-issuer
+      certificate:
+        commonName: OKDP Sandbox Self-Signed CA
+        organization: OKDP
+        country: FR
+        validity: 8760h
+        algorithm: ECDSA
+        size: 256
+  caClusterIssuers:
+    - name: corporate-ca
+      ca_crt: LS0tLS1CRUdJTi1DRVJUSUZJQ0FURS0tLS0tCg==
+      ca_key: LS0tLS1CRUdJTi1QUklWQVRFLUtFWS0tLS0tCg==
