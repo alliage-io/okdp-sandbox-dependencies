@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "tools",
+  "type": "object",
+  "properties": {
+    "global": {
+      "type": "object",
+      "description": "Platform values, from platform/platform-values.yaml (global.okdp)."
+    },
+    "connections": {
+      "type": "object",
+      "description": "External connections, one values layer per connection file. Not used by this chart."
+    },
+    "okdp-lib": {
+      "type": "object",
+      "description": "Values slot Helm creates for the okdp-lib library dependency. Not a parameter."
+    },
+    "reloader": {
+      "type": "object",
+      "additionalProperties": false,
+      "x-ui-group": "Tools",
+      "x-ui-order": 1,
+      "properties": {
+        "enabled": {"type": "boolean", "default": true, "title": "Reloader", "description": "Restart pods when their ConfigMaps or Secrets change."}
+      }
+    },
+    "replicator": {
+      "type": "object",
+      "additionalProperties": false,
+      "x-ui-group": "Tools",
+      "x-ui-order": 2,
+      "properties": {
+        "enabled": {"type": "boolean", "default": true, "title": "Replicator", "description": "Replicate Secrets and ConfigMaps between namespaces."}
+      }
+    },
+    "protection": {
+      "type": "object",
+      "additionalProperties": false,
+      "x-ui-group": "Protection",
+      "x-ui-order": 1,
+      "properties": {
+        "enabled": {"type": "boolean", "default": true, "title": "Deletion protection", "description": "Refuse to delete CRDs, namespaces and controllers carrying the label below set to \"true\"."},
+        "label": {"type": "string", "default": "okdp.io/protected", "title": "Label", "x-ui-advanced": true}
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,20 @@
+# Reviewed uses of forbidden patterns in the vendored charts (okdp-chart-guard.sh).
+- file: vendor/reloader/templates/*.yaml
+  pattern: capabilities
+  reason: >-
+    .Capabilities.APIVersions.Has gates RBAC (always served) and optional
+    integrations (OpenShift, Argo Rollouts, VPA, ServiceMonitor) left disabled.
+    Argo CD passes the cluster API versions to helm template, so both engines agree.
+- file: vendor/reloader/templates/_helpers.tpl
+  pattern: capabilities
+  reason: >-
+    .Capabilities.APIVersions.Has gates the RBAC rules of the OpenShift
+    DeploymentConfig and Argo Rollouts integrations, both off
+    (reloader.isOpenshift, reloader.isArgoRollouts). Argo CD passes the cluster
+    API versions to helm template, so both engines agree.
+- file: vendor/kubernetes-replicator/templates/verticalpodautoscaler.yaml
+  pattern: capabilities
+  reason: >-
+    VerticalPodAutoscaler only when the VPA API is served and
+    verticalPodAutoscaler.enabled (false).
+  disabledBy: verticalPodAutoscaler.enabled

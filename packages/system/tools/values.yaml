@@ -1,0 +1,20 @@
+# Platform values (platform/platform-values.yaml). Never set per instance.
+global:
+  okdp: {}
+
+# External connections (none used by this chart).
+connections: {}
+
+reloader:
+  # Restart pods when the ConfigMaps/Secrets they use change.
+  enabled: true
+replicator:
+  # Replicate Secrets/ConfigMaps between namespaces (replicator.v1.mittwald.de annotations).
+  enabled: true
+
+# ValidatingAdmissionPolicy refusing to delete CRDs, namespaces and controllers
+# (Deployment, StatefulSet, DaemonSet) labelled <label>=true. Replaces the KuboCD
+# `protected: true`. To delete such an object, remove the label first.
+protection:
+  enabled: true
+  label: okdp.io/protected

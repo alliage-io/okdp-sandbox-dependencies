@@ -11,6 +11,6 @@
   "packages/system/kubauth": "1.0.1",
   "packages/system/kubocd-webhooks": "1.0.1",
   "packages/system/local-secrets-provider": "1.0.1",
-  "packages/system/tools": "1.0.1",
+  "packages/system/tools": "1.0.0",
   "packages/system/vault": "1.0.1"
 }

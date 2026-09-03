@@ -1,0 +1,51 @@
+{{- /*
+Deletion protection (replaces the KuboCD package flag `protected: true`): a
+ValidatingAdmissionPolicy (Kubernetes >= 1.30, no controller) refusing DELETE
+of the CRDs, namespaces and controllers labelled <label>=true. Pods and
+ReplicaSets are left out so that rollouts keep working. Helm, Flux and Argo CD
+cannot delete them either: remove the label first.
+*/ -}}
+{{- if .Values.protection.enabled }}
+{{- $name := include "okdp.fullname" (dict "ctx" . "suffix" "protected") }}
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "okdp.labels" . | nindent 4 }}
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    objectSelector:
+      matchLabels:
+        {{ .Values.protection.label }}: "true"
+    resourceRules:
+      - apiGroups: ["apiextensions.k8s.io"]
+        apiVersions: ["*"]
+        operations: ["DELETE"]
+        resources: ["customresourcedefinitions"]
+      - apiGroups: [""]
+        apiVersions: ["*"]
+        operations: ["DELETE"]
+        resources: ["namespaces"]
+      - apiGroups: ["apps"]
+        apiVersions: ["*"]
+        operations: ["DELETE"]
+        resources: ["deployments", "statefulsets", "daemonsets"]
+  validations:
+    - expression: "false"
+      reason: Forbidden
+      messageExpression: >-
+        oldObject.kind + ' ' + oldObject.metadata.name + ' is protected by OKDP
+        (label {{ .Values.protection.label }}=true): remove the label before deleting it'
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "okdp.labels" . | nindent 4 }}
+spec:
+  policyName: {{ $name }}
+  validationActions: ["Deny"]
+{{- end }}

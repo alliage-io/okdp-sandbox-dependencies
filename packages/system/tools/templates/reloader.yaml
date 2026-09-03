@@ -1,0 +1,3 @@
+{{- if .Values.reloader.enabled }}
+{{ include "okdp.vendor.render" (dict "ctx" . "chart" "reloader" "values" (include "tools.reloader.values" . | fromYaml)) }}
+{{- end }}

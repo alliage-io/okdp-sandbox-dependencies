@@ -1,0 +1,7 @@
+# Only the protection policy, with another label.
+global:
+  okdp: {}
+reloader: {enabled: false}
+replicator: {enabled: false}
+protection:
+  label: example.org/protected
