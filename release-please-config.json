@@ -18,13 +18,6 @@
       "tag-separator": "/",
       "changelog-path": "CHANGELOG.md"
     },
-    "packages/system/cloudnative-pg": {
-      "component": "cloudnative-pg",
-      "release-type": "simple",
-      "include-component-in-tag": true,
-      "tag-separator": "/",
-      "changelog-path": "CHANGELOG.md"
-    },
     "packages/system/cnpg-postgresql": {
       "component": "cnpg-postgresql",
       "release-type": "simple",
@@ -46,13 +39,6 @@
       "tag-separator": "/",
       "changelog-path": "CHANGELOG.md"
     },
-    "packages/system/external-secrets": {
-      "component": "external-secrets",
-      "release-type": "simple",
-      "include-component-in-tag": true,
-      "tag-separator": "/",
-      "changelog-path": "CHANGELOG.md"
-    },
     "packages/system/ingress-nginx": {
       "component": "ingress-nginx",
       "release-type": "simple",
@@ -69,13 +55,6 @@
     },
     "packages/system/kubauth": {
       "component": "kubauth",
-      "release-type": "simple",
-      "include-component-in-tag": true,
-      "tag-separator": "/",
-      "changelog-path": "CHANGELOG.md"
-    },
-    "packages/system/kubocd-webhooks": {
-      "component": "kubocd-webhooks",
       "release-type": "simple",
       "include-component-in-tag": true,
       "tag-separator": "/",
