@@ -1,0 +1,6 @@
+# Upstream charts rendered by okdp.vendor.render (templates/*.yaml).
+# Refresh vendor/ with: scripts/vendor-charts.sh packages/system/dns-server
+charts:
+  - name: coredns
+    repository: https://coredns.github.io/helm
+    version: 1.47.1

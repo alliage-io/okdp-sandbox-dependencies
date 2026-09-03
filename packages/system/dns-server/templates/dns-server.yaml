@@ -1,0 +1,1 @@
+{{ include "okdp.vendor.render" (dict "ctx" . "chart" "coredns" "values" (include "dns-server.upstream.values" . | fromYaml)) }}

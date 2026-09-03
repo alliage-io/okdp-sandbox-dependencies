@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "dns-server",
+  "type": "object",
+  "properties": {
+    "global": {
+      "type": "object",
+      "description": "Platform values, from platform/platform-values.yaml (global.okdp)."
+    },
+    "connections": {
+      "type": "object",
+      "description": "External connections, one values layer per connection file. Not used by this chart."
+    },
+    "okdp-lib": {
+      "type": "object",
+      "description": "Values slot Helm creates for the okdp-lib library dependency. Not a parameter."
+    },
+    "target": {
+      "type": "string",
+      "default": "127.0.0.1",
+      "title": "Target address",
+      "description": "Address returned for every name under the ingress suffix (IPv4, or IPv6).",
+      "x-ui-group": "DNS",
+      "x-ui-order": 1,
+      "x-ui-columns": 2
+    },
+    "nodePort": {
+      "type": "integer",
+      "default": 30053,
+      "minimum": 30000,
+      "maximum": 32766,
+      "title": "Node port",
+      "description": "Node port of the DNS service, UDP and TCP.",
+      "x-ui-group": "DNS",
+      "x-ui-order": 2,
+      "x-ui-columns": 2
+    },
+    "forwarders": {
+      "type": "array",
+      "default": ["8.8.8.8", "8.8.4.4"],
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1},
+      "title": "Forwarders",
+      "description": "Upstream DNS servers for the names outside the ingress suffix.",
+      "x-ui-group": "DNS",
+      "x-ui-order": 3,
+      "x-ui-advanced": true
+    }
+  },
+  "additionalProperties": false
+}

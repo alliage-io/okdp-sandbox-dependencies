@@ -1,0 +1,7 @@
+# Reviewed uses of forbidden patterns in the vendored charts (okdp-chart-guard.sh).
+- file: vendor/coredns/templates/hpa.yaml
+  pattern: capabilities
+  reason: >-
+    .Capabilities.APIVersions.Has "autoscaling/v2" selects the HPA API version;
+    the HPA is off (hpa.enabled=false).
+  disabledBy: hpa.enabled
