@@ -18,3 +18,10 @@ replicator:
 protection:
   enabled: true
   label: okdp.io/protected
+  # CRDs of these API groups (and their subgroups, e.g. acme.cert-manager.io) are
+  # protected whatever their labels: upstream charts used directly from
+  # platform/components (external-secrets, cloudnative-pg) cannot label them.
+  crdGroups:
+    - cert-manager.io
+    - external-secrets.io
+    - postgresql.cnpg.io

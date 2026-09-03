@@ -49,3 +49,41 @@ spec:
   policyName: {{ $name }}
   validationActions: ["Deny"]
 {{- end }}
+{{- if and .Values.protection.enabled .Values.protection.crdGroups }}
+{{- $name := include "okdp.fullname" (dict "ctx" . "suffix" "protected-crds") }}
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "okdp.labels" . | nindent 4 }}
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["apiextensions.k8s.io"]
+        apiVersions: ["*"]
+        operations: ["DELETE"]
+        resources: ["customresourcedefinitions"]
+  variables:
+    - name: groups
+      expression: {{ .Values.protection.crdGroups | toJson | squote }}
+  validations:
+    - expression: >-
+        !variables.groups.exists(g, oldObject.spec.group == g || oldObject.spec.group.endsWith('.' + g))
+      reason: Forbidden
+      messageExpression: >-
+        'CustomResourceDefinition ' + oldObject.metadata.name + ' is protected by OKDP
+        (API group ' + oldObject.spec.group + '): remove it from the tools chart protection.crdGroups first'
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "okdp.labels" . | nindent 4 }}
+spec:
+  policyName: {{ $name }}
+  validationActions: ["Deny"]
+{{- end }}

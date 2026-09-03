@@ -40,7 +40,15 @@
       "x-ui-order": 1,
       "properties": {
         "enabled": {"type": "boolean", "default": true, "title": "Deletion protection", "description": "Refuse to delete CRDs, namespaces and controllers carrying the label below set to \"true\"."},
-        "label": {"type": "string", "default": "okdp.io/protected", "title": "Label", "x-ui-advanced": true}
+        "label": {"type": "string", "default": "okdp.io/protected", "title": "Label", "x-ui-advanced": true},
+        "crdGroups": {
+          "type": "array",
+          "items": {"type": "string"},
+          "default": ["cert-manager.io", "external-secrets.io", "postgresql.cnpg.io"],
+          "title": "Protected CRD groups",
+          "description": "CRDs of these API groups and their subgroups cannot be deleted, labelled or not.",
+          "x-ui-advanced": true
+        }
       }
     }
   },
