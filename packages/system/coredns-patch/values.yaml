@@ -1,0 +1,12 @@
+# Platform values (platform/platform-values.yaml). Never set per instance.
+# Reads global.okdp.ingress.suffix.
+global:
+  okdp: {}
+
+# External connections (none used by this chart).
+connections: {}
+
+# FQDN answered (CNAME) for every name under the ingress suffix: the ingress-nginx
+# controller Service, <ingress-nginx release>-controller.<namespace>.svc.cluster.local
+# (component 10-ingress-nginx in namespace ingress-nginx).
+ingressService: "ingress-nginx-ingress-nginx-controller.ingress-nginx.svc.cluster.local"

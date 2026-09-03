@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "coredns-patch",
+  "type": "object",
+  "properties": {
+    "global": {
+      "type": "object",
+      "description": "Platform values, from platform/platform-values.yaml (global.okdp)."
+    },
+    "connections": {
+      "type": "object",
+      "description": "External connections, one values layer per connection file. Not used by this chart."
+    },
+    "okdp-lib": {
+      "type": "object",
+      "description": "Values slot Helm creates for the okdp-lib library dependency. Not a parameter."
+    },
+    "ingressService": {
+      "type": "string",
+      "default": "ingress-nginx-ingress-nginx-controller.ingress-nginx.svc.cluster.local",
+      "title": "Ingress controller Service",
+      "description": "FQDN answered (CNAME) for every name under the ingress suffix: <ingress-nginx release>-controller.<namespace>.svc.cluster.local.",
+      "x-ui-group": "DNS",
+      "x-ui-order": 1
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,63 @@
+{{- /*
+The Job that patches the kube-system CoreDNS Corefile (replaces the upstream
+templates/job.yaml, dropped in vendor.yaml): it removes every template block of
+the suffix (the upstream `template IN A` one included), inserts
+coredns-patch.block before the kubernetes plugin, and restarts CoreDNS only when
+the Corefile changed. A Job spec is immutable: its name carries a hash of the
+block, so a new block runs a new Job. RBAC: the upstream coredns-config-sa.
+*/ -}}
+{{- $block := include "coredns-patch.block" . -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ printf "coredns-config-job-%s" ($block | sha256sum | trunc 8) }}
+  namespace: kube-system
+  labels:
+    {{- include "okdp.labels" . | nindent 4 }}
+spec:
+  template:
+    metadata:
+      labels:
+        {{- include "okdp.labels" . | nindent 8 }}
+    spec:
+      serviceAccountName: coredns-config-sa
+      restartPolicy: OnFailure
+      nodeSelector:
+        kubernetes.io/os: linux
+      containers:
+        - name: kubectl
+          image: quay.io/okdp/sandbox-images/kubectl:latest
+          env:
+            - name: SUFFIX
+              value: {{ .Values.global.okdp.ingress.suffix | quote }}
+            - name: BLOCK
+              value: {{ $block | quote }}
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -euo pipefail
+              current=$(kubectl -n kube-system get configmap coredns -o jsonpath='{.data.Corefile}')
+              # Drop the template blocks of the suffix, then insert ours before kubernetes
+              # (awk reads them from ENVIRON: -v would interpret the backslashes).
+              new=$(printf '%s\n' "${current}" | awk '
+                BEGIN { s = ENVIRON["SUFFIX"]; block = ENVIRON["BLOCK"] }
+                $1 == "template" && $4 == s && $NF == "{" { skip = 1; next }
+                skip { if ($1 == "}") skip = 0; next }
+                /^[[:space:]]*kubernetes[[:space:]]/ && !done {
+                  match($0, /^[[:space:]]*/); ind = substr($0, 1, RLENGTH)
+                  n = split(block, lines, "\n")
+                  for (i = 1; i <= n; i++) print ind lines[i]
+                  done = 1
+                }
+                { print }')
+              if [[ "${new}" == "${current}" ]]; then
+                echo "CoreDNS already answers ${SUFFIX}"
+                exit 0
+              fi
+              echo "Updating the CoreDNS template for ${SUFFIX}"
+              kubectl -n kube-system patch configmap coredns --type merge \
+                -p "$(jq -n --arg c "${new}"$'\n' '{data: {Corefile: $c}}')"
+              kubectl -n kube-system rollout restart deployment coredns
+              kubectl -n kube-system rollout status deployment coredns --timeout=300s
+              echo "CoreDNS patched"

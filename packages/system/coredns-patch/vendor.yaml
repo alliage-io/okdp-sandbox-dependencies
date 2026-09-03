@@ -1,0 +1,9 @@
+# Upstream charts rendered by okdp.vendor.render (templates/*.yaml).
+# Refresh vendor/ with: scripts/vendor-charts.sh packages/system/coredns-patch
+charts:
+  - name: coredns-patch
+    repository: oci://quay.io/okdp/charts
+    version: 0.1.0
+    # Its Job answers only A queries of the suffix: templates/job.yaml of this chart
+    # replaces it (every query type).
+    remove: [templates/job.yaml]

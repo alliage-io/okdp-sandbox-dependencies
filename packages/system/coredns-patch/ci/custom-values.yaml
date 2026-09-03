@@ -1,0 +1,4 @@
+global:
+  okdp:
+    ingress: {suffix: example.test, className: nginx}
+ingressService: my-ingress-controller.ingress.svc.cluster.local

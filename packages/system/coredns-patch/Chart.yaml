@@ -1,0 +1,23 @@
+apiVersion: v2
+name: coredns-patch
+description: >-
+  CoreDNS configuration patch for local development: a Job adds a template to the
+  kube-system CoreDNS Corefile so that every name under the platform ingress suffix
+  resolves, inside the cluster, to the ingress controller Service.
+type: application
+# <upstream>-<okdp semver>; the okdp half is owned by release-please.
+version: 1.0.0-1.0.0
+appVersion: "1.0.0"
+home: https://okdp.io
+sources:
+  - https://github.com/OKDP/sandbox-dependencies
+  - https://github.com/OKDP/helm-charts-utilities
+annotations:
+  # Former KuboCD package roles/dependencies, kept for the catalog.
+  okdp.io/roles: coredns
+  okdp.io/depends-on: ""
+dependencies:
+  - name: okdp-lib
+    version: 0.1.0
+    # TODO(no-kubocd): switch to oci://quay.io/okdp/platform-charts
+    repository: file://../../../../okdp-lib
