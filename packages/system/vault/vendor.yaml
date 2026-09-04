@@ -1,0 +1,6 @@
+# Upstream charts rendered by okdp.vendor.render (templates/*.yaml).
+# Refresh vendor/ with: scripts/vendor-charts.sh packages/system/vault
+charts:
+  - name: vault
+    repository: https://helm.releases.hashicorp.com
+    version: 0.34.1

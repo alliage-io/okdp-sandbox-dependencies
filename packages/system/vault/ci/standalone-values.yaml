@@ -1,0 +1,8 @@
+global:
+  okdp:
+    ingress: {suffix: example.test, className: traefik}
+    certificateIssuers: {selfSigned: {name: corp-issuer}}
+dev: false
+ingressHost: secrets
+uiEnabled: false
+protected: false

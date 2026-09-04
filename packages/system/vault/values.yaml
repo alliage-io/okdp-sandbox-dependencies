@@ -1,0 +1,15 @@
+# Platform values (platform/platform-values.yaml). Never set per instance.
+# Reads global.okdp.ingress.{suffix,className} and certificateIssuers.selfSigned.name.
+global:
+  okdp: {}
+
+# External connections (none used by this chart).
+connections: {}
+
+# Dev mode: unsealed in-memory server, root token "root", emptied on restart. Sandbox only.
+dev: true
+# Host name, the platform ingress suffix is appended.
+ingressHost: vault
+uiEnabled: true
+# Label the StatefulSet and the injector okdp.io/protected=true (former KuboCD protected).
+protected: true

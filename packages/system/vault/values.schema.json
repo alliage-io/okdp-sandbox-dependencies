@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "vault",
+  "type": "object",
+  "properties": {
+    "global": {
+      "type": "object",
+      "description": "Platform values, from platform/platform-values.yaml (global.okdp)."
+    },
+    "connections": {
+      "type": "object",
+      "description": "External connections, one values layer per connection file. Not used by this chart."
+    },
+    "okdp-lib": {
+      "type": "object",
+      "description": "Values slot Helm creates for the okdp-lib library dependency. Not a parameter."
+    },
+    "dev": {
+      "type": "boolean",
+      "default": true,
+      "title": "Development mode",
+      "description": "Unsealed in-memory server with root token \"root\": the store is emptied on every restart. Sandbox only.",
+      "x-ui-group": "Server",
+      "x-ui-order": 1
+    },
+    "ingressHost": {
+      "type": "string",
+      "default": "vault",
+      "title": "Ingress host",
+      "description": "Host name, the platform ingress suffix is appended.",
+      "x-ui-group": "Server",
+      "x-ui-order": 2,
+      "x-ui-columns": 2
+    },
+    "uiEnabled": {
+      "type": "boolean",
+      "default": true,
+      "title": "Web UI",
+      "x-ui-group": "Server",
+      "x-ui-order": 3
+    },
+    "protected": {
+      "type": "boolean",
+      "default": true,
+      "title": "Protected",
+      "description": "Label the Vault StatefulSet and the injector okdp.io/protected=true: the ValidatingAdmissionPolicy of the tools chart refuses to delete them.",
+      "x-ui-group": "Server",
+      "x-ui-order": 4,
+      "x-ui-advanced": true
+    }
+  },
+  "additionalProperties": false
+}

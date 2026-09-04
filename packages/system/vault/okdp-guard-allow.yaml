@@ -1,0 +1,7 @@
+# Reviewed uses of forbidden patterns in the vendored charts (okdp-chart-guard.sh).
+- file: vendor/vault/templates/*.yaml
+  pattern: capabilities
+  reason: >-
+    .Capabilities.APIVersions.Has on rbac.authorization.k8s.io/v1 and
+    admissionregistration.k8s.io/v1, served by every supported cluster; Argo CD
+    passes the cluster API versions to helm template, so both engines agree.

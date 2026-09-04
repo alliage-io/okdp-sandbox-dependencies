@@ -1,0 +1,1 @@
+{{ include "vault.protect" (dict "enabled" .Values.protected "rendered" (include "okdp.vendor.render" (dict "ctx" . "chart" "vault" "values" (include "vault.upstream.values" . | fromYaml)))) }}
