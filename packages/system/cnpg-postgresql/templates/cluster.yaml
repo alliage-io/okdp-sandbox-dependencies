@@ -1,0 +1,29 @@
+{{- $class := (include "okdp.platform.get" (dict "ctx" . "path" "storageClass.data") | fromYaml).v }}
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ include "cnpg-postgresql.clusterName" . }}
+  labels:
+    {{- include "okdp.labels" . | nindent 4 }}
+spec:
+  instances: {{ .Values.instances }}
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.3
+  inheritedMetadata:
+    labels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  storage:
+    size: {{ .Values.storageSize }}
+    {{- with $class }}
+    storageClass: {{ . | quote }}
+    {{- end }}
+  {{- with .Values.databases }}
+  managed:
+    roles:
+      {{- range $db := . }}
+      - name: {{ $db.owner.username | quote }}
+        ensure: present
+        login: true
+        passwordSecret:
+          name: {{ $db.owner.passwordSecret | quote }}
+      {{- end }}
+  {{- end }}

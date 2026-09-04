@@ -1,0 +1,106 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "cnpg-postgresql",
+  "type": "object",
+  "properties": {
+    "global": {
+      "type": "object",
+      "description": "Platform values, from platform/platform-values.yaml (global.okdp)."
+    },
+    "connections": {
+      "type": "object",
+      "description": "External connections, one values layer per connection file. Not used by this chart."
+    },
+    "okdp-lib": {
+      "type": "object",
+      "description": "Values slot Helm creates for the okdp-lib library dependency. Not a parameter."
+    },
+    "databases": {
+      "type": "array",
+      "title": "Databases",
+      "description": "Logical databases, one database-server connection each.",
+      "x-ui-group": "Databases",
+      "x-ui-order": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "owner"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Database",
+            "pattern": "^[a-z_][a-z0-9_]*$"
+          },
+          "owner": {
+            "type": "object",
+            "title": "Owner",
+            "required": [
+              "username",
+              "passwordSecret"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "username": {
+                "type": "string",
+                "title": "Role"
+              },
+              "passwordSecret": {
+                "type": "string",
+                "title": "Credentials Secret",
+                "description": "Secret in this namespace with the keys username and password (created by someone else, e.g. local-secrets-provider). Also the secretRef of the published connection."
+              }
+            }
+          },
+          "schemas": {
+            "type": "array",
+            "title": "Schemas",
+            "description": "Schemas created in the database, owned by the owner.",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "instances": {
+      "type": "integer",
+      "default": 1,
+      "minimum": 1,
+      "title": "Instances",
+      "description": "PostgreSQL instances (1 primary + standbys).",
+      "x-ui-group": "Cluster",
+      "x-ui-order": 1,
+      "x-ui-widget": "stepper",
+      "x-ui-columns": 2
+    },
+    "storageSize": {
+      "type": "string",
+      "default": "2Gi",
+      "title": "Storage size",
+      "description": "Volume size of each instance.",
+      "x-ui-group": "Cluster",
+      "x-ui-order": 2,
+      "x-ui-columns": 2
+    },
+    "databaseReclaimPolicy": {
+      "type": "string",
+      "enum": [
+        "delete",
+        "retain"
+      ],
+      "default": "delete",
+      "title": "Database reclaim policy",
+      "description": "What happens to a database when it is removed from the list.",
+      "x-ui-group": "Cluster",
+      "x-ui-order": 3,
+      "x-ui-advanced": true
+    }
+  },
+  "required": [
+    "databases"
+  ],
+  "additionalProperties": false
+}

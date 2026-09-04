@@ -1,0 +1,23 @@
+{{- range $db := .Values.databases }}
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: {{ include "okdp.fullname" (dict "ctx" $ "suffix" ($db.name | replace "_" "-")) }}
+  labels:
+    {{- include "okdp.labels" $ | nindent 4 }}
+spec:
+  name: {{ $db.name }}
+  owner: {{ $db.owner.username }}
+  databaseReclaimPolicy: {{ $.Values.databaseReclaimPolicy }}
+  cluster:
+    name: {{ include "cnpg-postgresql.clusterName" $ }}
+  {{- with $db.schemas }}
+  schemas:
+    {{- range $schema := . }}
+    - name: {{ $schema | quote }}
+      owner: {{ $db.owner.username | quote }}
+      ensure: present
+    {{- end }}
+  {{- end }}
+{{- end }}

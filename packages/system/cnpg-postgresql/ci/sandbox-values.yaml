@@ -1,0 +1,7 @@
+global:
+  okdp:
+    ingress: {suffix: okdp.sandbox, className: nginx}
+    storageClass: {data: standard, workspace: standard}
+databases:
+  - name: keycloak
+    owner: {username: keycloak, passwordSecret: creds-keycloak-db}

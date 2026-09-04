@@ -1,0 +1,21 @@
+# Platform values (platform/platform-values.yaml). Never set per instance.
+# Reads global.okdp.storageClass.data (the cluster default class when unset).
+global:
+  okdp: {}
+
+# External connections (none used by this chart).
+connections: {}
+
+# Logical databases, one database-server connection each:
+#   - name: keycloak
+#     owner: {username: keycloak, passwordSecret: creds-keycloak-db}
+#     schemas: []
+# owner.passwordSecret: a Secret of this namespace with the keys username and
+# password, created by someone else (local-secrets-provider in the sandbox).
+databases: []
+# PostgreSQL instances (1 primary + standbys).
+instances: 1
+# Volume size of each instance.
+storageSize: 2Gi
+# delete or retain a database removed from the list.
+databaseReclaimPolicy: delete

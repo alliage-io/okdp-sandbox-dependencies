@@ -1,0 +1,23 @@
+apiVersion: v2
+name: cnpg-postgresql
+description: >-
+  One PostgreSQL cluster managed by the CloudNativePG operator, hosting several logical
+  databases, each with its owner role. Publishes one database-server connection per
+  database, the owner's credentials Secret as its secretRef.
+type: application
+# <upstream>-<okdp semver>; the okdp half is owned by release-please.
+version: 18.3.0-1.0.0
+appVersion: "18.3.0"
+home: https://okdp.io
+sources:
+  - https://github.com/OKDP/sandbox-dependencies
+  - https://cloudnative-pg.io/
+annotations:
+  # Former KuboCD package roles/dependencies, kept for the catalog.
+  okdp.io/roles: database-server
+  okdp.io/depends-on: "pg-operator,external-secrets"
+dependencies:
+  - name: okdp-lib
+    version: 0.1.0
+    # TODO(no-kubocd): switch to oci://quay.io/okdp/platform-charts
+    repository: file://../../../../okdp-lib

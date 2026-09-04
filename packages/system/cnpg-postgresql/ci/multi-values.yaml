@@ -1,0 +1,11 @@
+global:
+  okdp: {}
+instances: 3
+storageSize: 10Gi
+databaseReclaimPolicy: retain
+databases:
+  - name: hive_metastore
+    owner: {username: hive, passwordSecret: creds-hive-db}
+    schemas: [metastore]
+  - name: airflow
+    owner: {username: airflow, passwordSecret: creds-airflow-db}
