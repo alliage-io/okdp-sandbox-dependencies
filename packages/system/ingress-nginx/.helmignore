@@ -1,0 +1,15 @@
+# Upstream documentation of the vendored charts: not needed to render, and the
+# whole chart is stored in every Helm release Secret.
+vendor/*/README.md
+vendor/*/README.md.gotmpl
+vendor/*/CHANGELOG.md
+vendor/*/docs/
+vendor/*/test/
+vendor/*/values.linter.exceptions
+vendor/*/.github/
+okdp-guard-allow.yaml
+.git/
+vendor/*/changelog/
+vendor/*/ci/
+vendor/*/tests/
+vendor/*/OWNERS

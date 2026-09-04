@@ -1,0 +1,15 @@
+# Platform values (platform/platform-values.yaml). Never set per instance.
+# Reads global.okdp.ingress.className (the IngressClass created, default nginx).
+global:
+  okdp: {}
+
+# External connections (none used by this chart).
+connections: {}
+
+# nodePort (kind clusters), hostPort (host networking) or metallb (LoadBalancer on endpoint).
+mode: nodePort
+# LoadBalancer IP in metallb mode.
+endpoint: ""
+# Node ports in nodePort mode.
+httpPort: 30080
+httpsPort: 30443

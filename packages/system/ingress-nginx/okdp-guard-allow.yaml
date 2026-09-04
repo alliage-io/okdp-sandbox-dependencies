@@ -1,0 +1,4 @@
+# Reviewed uses of forbidden patterns in the vendored charts (okdp-chart-guard.sh).
+- file: vendor/ingress-nginx/templates/*-hpa.yaml
+  pattern: capabilities
+  reason: HPA API version selection; autoscaling is off (controller.autoscaling.enabled=false).

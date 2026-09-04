@@ -1,0 +1,4 @@
+global:
+  okdp:
+    ingress: {suffix: okdp.sandbox, className: nginx}
+mode: hostPort

@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ingress-nginx",
+  "type": "object",
+  "properties": {
+    "global": {
+      "type": "object",
+      "description": "Platform values, from platform/platform-values.yaml (global.okdp)."
+    },
+    "connections": {
+      "type": "object",
+      "description": "External connections, one values layer per connection file. Not used by this chart."
+    },
+    "okdp-lib": {
+      "type": "object",
+      "description": "Values slot Helm creates for the okdp-lib library dependency. Not a parameter."
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "nodePort",
+        "hostPort",
+        "metallb"
+      ],
+      "default": "nodePort",
+      "title": "Deployment mode",
+      "description": "nodePort: NodePort Service (kind clusters); hostPort: host networking, ports 80/443 on the nodes; metallb: LoadBalancer Service on endpoint.",
+      "x-ui-group": "Exposure",
+      "x-ui-order": 1
+    },
+    "endpoint": {
+      "type": "string",
+      "default": "",
+      "title": "MetalLB IP",
+      "description": "LoadBalancer IP in metallb mode.",
+      "x-ui-group": "Exposure",
+      "x-ui-order": 2,
+      "x-ui-condition": {
+        "field": "mode",
+        "value": "metallb"
+      }
+    },
+    "httpPort": {
+      "type": "integer",
+      "default": 30080,
+      "title": "HTTP node port",
+      "x-ui-group": "Exposure",
+      "x-ui-order": 3,
+      "x-ui-columns": 2,
+      "x-ui-condition": {
+        "field": "mode",
+        "value": "nodePort"
+      }
+    },
+    "httpsPort": {
+      "type": "integer",
+      "default": 30443,
+      "title": "HTTPS node port",
+      "x-ui-group": "Exposure",
+      "x-ui-order": 4,
+      "x-ui-columns": 2,
+      "x-ui-condition": {
+        "field": "mode",
+        "value": "nodePort"
+      }
+    }
+  },
+  "additionalProperties": false
+}
