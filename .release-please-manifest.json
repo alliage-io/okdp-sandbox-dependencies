@@ -7,7 +7,7 @@
   "packages/system/ingress-nginx": "1.0.1",
   "packages/system/keycloak": "1.0.1",
   "packages/system/kubauth": "1.0.1",
-  "packages/system/local-secrets-provider": "1.0.1",
+  "packages/system/local-secrets-provider": "1.0.0",
   "packages/system/tools": "1.0.0",
   "packages/system/vault": "1.0.1"
 }

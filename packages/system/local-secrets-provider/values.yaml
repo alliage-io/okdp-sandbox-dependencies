@@ -1,0 +1,12 @@
+# Platform values (platform/platform-values.yaml). Never set per instance.
+global:
+  okdp: {}
+
+# External connections (none used by this chart).
+connections: {}
+
+# Secrets to provision, each replicated to every namespace:
+#   - name: creds-keycloak-db
+#     data: {username: keycloak, password: keycloak123}
+# Values cannot be empty: nothing generates them (use ESO for generated passwords).
+secrets: []

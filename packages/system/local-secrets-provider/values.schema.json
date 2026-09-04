@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "local-secrets-provider",
+  "type": "object",
+  "properties": {
+    "global": {
+      "type": "object",
+      "description": "Platform values, from platform/platform-values.yaml (global.okdp)."
+    },
+    "connections": {
+      "type": "object",
+      "description": "External connections, one values layer per connection file. Not used by this chart."
+    },
+    "okdp-lib": {
+      "type": "object",
+      "description": "Values slot Helm creates for the okdp-lib library dependency. Not a parameter."
+    },
+    "secrets": {
+      "type": "array",
+      "title": "Secrets",
+      "description": "Secrets to provision. Each entry creates one Kubernetes Secret, replicated to every namespace.",
+      "x-ui-group": "Secrets",
+      "x-ui-order": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "data"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Name of the Kubernetes Secret to create.",
+            "pattern": "^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$"
+          },
+          "data": {
+            "type": "object",
+            "title": "Data",
+            "description": "Free-form key/value pairs stored in the Secret. Values cannot be empty: nothing generates them.",
+            "additionalProperties": {
+              "type": [
+                "string",
+                "number",
+                "boolean"
+              ],
+              "minLength": 1
+            }
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "secrets"
+  ],
+  "additionalProperties": false
+}

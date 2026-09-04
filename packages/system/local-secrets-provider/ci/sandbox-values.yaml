@@ -1,0 +1,12 @@
+global:
+  okdp:
+    ingress: {suffix: okdp.sandbox, className: nginx}
+secrets:
+  - name: creds-keycloak-db
+    data:
+      username: keycloak
+      password: keycloak123
+  - name: generated
+    data:
+      token: ci-token
+      port: 5432

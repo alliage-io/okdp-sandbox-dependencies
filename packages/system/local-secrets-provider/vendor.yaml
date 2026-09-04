@@ -1,0 +1,6 @@
+# Upstream charts rendered by okdp.vendor.render (templates/*.yaml).
+# Refresh vendor/ with: scripts/vendor-charts.sh packages/system/local-secrets-provider
+charts:
+  - name: local-secrets-provider
+    repository: oci://quay.io/okdp/charts
+    version: 0.1.0
