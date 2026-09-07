@@ -1,0 +1,6 @@
+# Platform component 20-vault: the OKDP chart vault (packages/system/vault).
+#   instance.yaml: {name: vault, project: vault, service: vault,
+#                   chart: oci://quay.io/okdp/sandbox-charts/vault,
+#                   version: "0.34.1-1.0.0", connections: []}
+# Optional (was clusters/sandbox/optional/vault). Dev mode: sandbox only.
+dev: true

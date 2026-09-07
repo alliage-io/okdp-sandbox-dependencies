@@ -1,0 +1,6 @@
+# Platform component 10-coredns-patch: the OKDP chart coredns-patch (packages/system/coredns-patch).
+#   instance.yaml: {name: coredns-patch, project: kube-system, service: coredns-patch,
+#                   chart: oci://quay.io/okdp/sandbox-charts/coredns-patch,
+#                   version: "1.0.0-1.0.0", connections: []}
+# Patches the kube-system CoreDNS (fixed names in kube-system: install once).
+ingressService: ingress-nginx-ingress-nginx-controller.ingress-nginx.svc.cluster.local

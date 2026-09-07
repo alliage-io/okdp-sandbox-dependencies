@@ -1,0 +1,6 @@
+# Platform component 00-tools: the OKDP chart tools (packages/system/tools).
+#   instance.yaml: {name: tools, project: kube-tools, service: tools,
+#                   chart: oci://quay.io/okdp/sandbox-charts/tools,
+#                   version: "1.0.0-1.0.0", connections: []}
+# Former Release tools (kube-tools). Also the deletion protection policies.
+{}

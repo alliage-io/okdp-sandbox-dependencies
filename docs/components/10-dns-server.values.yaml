@@ -1,0 +1,11 @@
+# Platform component 10-dns-server: the OKDP chart dns-server (packages/system/dns-server).
+#   instance.yaml: {name: dns-server, project: dns-server, service: dns-server,
+#                   chart: oci://quay.io/okdp/sandbox-charts/dns-server,
+#                   version: "1.47.1-1.0.0", connections: []}
+# Former Release dns-server (dnsmasq), now CoreDNS: *.<suffix> -> target, the other names
+# forwarded; UDP and TCP on the node port.
+target: 127.0.0.1
+nodePort: 30053
+forwarders:
+- 8.8.8.8
+- 8.8.4.4

@@ -1,0 +1,22 @@
+# Platform component 20-storage: the OKDP chart seaweedfs (packages/services/seaweedfs).
+#   instance.yaml: {name: storage, project: default, service: seaweedfs,
+#                   chart: oci://quay.io/okdp/sandbox-charts/seaweedfs,
+#                   version: "4.47.0-1.0.0", connections: []}
+# Optional in the sandbox (was clusters/sandbox/optional/storage). Keeps the former hosts
+# storage-default[-api].okdp.sandbox; the in-cluster endpoint becomes
+# http://default-storage-s3.default.svc.cluster.local:8333. Publishes the s3 output
+# default-storage with secretRef creds-seaweedfs-s3 (replicated by 10-local-secrets-provider).
+# The sandbox passwords below are sandbox values, assumed as such.
+password: sandbox-filer-pw
+rootSecretKey: sandbox-seaweedfs-root
+grants:
+- principal: platformAdmin
+  credentialsSecret:
+    name: creds-seaweedfs-s3
+    accessKeyKey: accessKey
+    secretKeyKey: secretKey
+  actions:
+  - Admin
+consoleHost: storage-default
+apiHost: storage-default-api
+outputSecretRef: creds-seaweedfs-s3

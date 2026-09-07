@@ -1,0 +1,11 @@
+# Platform component 20-cnpg-postgresql: the OKDP chart cnpg-postgresql (packages/system/cnpg-postgresql).
+#   instance.yaml: {name: cnpg-postgresql, project: cnpg-system, service: cnpg-postgresql,
+#                   chart: oci://quay.io/okdp/sandbox-charts/cnpg-postgresql,
+#                   version: "18.3.0-1.0.0", connections: []}
+# Publishes the database-server output cnpg-system-cnpg-postgresql-keycloak (external-only
+# contract: 20-keycloak declares it as a connection).
+databases:
+- name: keycloak
+  owner:
+    username: keycloak
+    passwordSecret: creds-keycloak-db

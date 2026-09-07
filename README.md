@@ -1,7 +1,7 @@
 [![ci](https://github.com/okdp/sandbox-dependencies/actions/workflows/ci.yml/badge.svg)](https://github.com/okdp/sandbox-dependencies/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/okdp/sandbox-dependencies)](https://github.com/okdp/sandbox-dependencies/releases/latest)&ensp;&ensp;
-[![KuboCD](https://img.shields.io/badge/kubocd-v0.3.2-green.svg)](https://github.com/kubocd/kubocd)&ensp;&ensp;
-[![Kubernetes](https://img.shields.io/badge/kubernetes-1.28+-blue.svg)](https://kubernetes.io/)&ensp;&ensp;
+[![Helm](https://img.shields.io/badge/helm-3.x-blue.svg)](https://helm.sh/)&ensp;&ensp;
+[![Kubernetes](https://img.shields.io/badge/kubernetes-1.30+-blue.svg)](https://kubernetes.io/)&ensp;&ensp;
 [![License Apache2](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 <a href="https://okdp.io">
 <img src="https://okdp.io/logos/okdp-notext.svg" height="20px" style="margin: 0 2px;" />
@@ -9,151 +9,116 @@
 
 ## Overview
 
-This repository builds and publishes the OKDP platform packages requirements used to operate platform services with [KuboCD](https://www.kubocd.io/).
+This repository builds and publishes the Helm charts of the OKDP sandbox prerequisites:
+cluster foundations (ingress, DNS, certificates, database, identity, secret management,
+deletion protection) and the object storage backing the platform services. They are not
+part of the OKDP distribution itself.
 
-These packages are not part of the OKDP distribution itself. They are the prerequisites the sandbox depends on: cluster foundations (ingress, DNS, certificates, database operator, identity, secret management) and the object storage backing the platform services.
+It is **charts-only**: it owns the charts under `packages/` and the CI that tests and
+publishes them. The deployment layer (the deployments Git repository read by Flux or Argo
+CD) lives in [`OKDP/okdp-sandbox`](https://github.com/OKDP/okdp-sandbox); the components it
+installs from here, their layer and their values are listed in
+[`docs/components/`](./docs/components/README.md).
 
-It is **packages-only**: it owns the package definitions under `packages/` and the CI that builds and publishes them as OCI artifacts. It does **not** own the deployment layer (releases, contexts, Flux/KuboCD bootstrap). Deployment lives in [`OKDP/okdp-sandbox`](https://github.com/OKDP/okdp-sandbox), which consumes the packages published here.
+## OKDP charts
 
-## KuboCD Concepts
+Every chart follows the OKDP chart rules (shared with `platform-packages` and
+`community-packages`):
 
-- **Package**: a versioned OCI artifact that bundles a KuboCD application descriptor and one or more Helm charts. The manifests under `packages/` define the packages published by this repository.
-- **Connection**: what a package publishes for others to consume, declared under `outputs` and taken by a consumer as a `connectionRef` parameter. `cnpg-postgresql` and `seaweedfs` publish theirs, `keycloak` consumes the database one.
+- values: `global.okdp` (platform values, the first values layer), `connections` (external
+  connections), then the chart parameters (the former KuboCD parameters);
+- upstream charts whose values are computed are **vendored** under `vendor/<name>/`
+  (listed in `vendor.yaml`, refreshed and checked with
+  [`scripts/vendor-charts.sh`](./scripts/vendor-charts.sh)) and rendered with
+  `okdp.vendor.render` from the library chart `okdp-lib`;
+- every chart renders the instance descriptor ConfigMap `<release>-okdp` (URL, usage, the
+  connections it provides);
+- nothing differs between `helm install` (Flux) and `helm template` (Argo CD): no `lookup`,
+  no random function, hooks limited to pre/post-install/upgrade. Reviewed upstream
+  exceptions are in each chart's `okdp-guard-allow.yaml`.
 
-Packages are deployed through KuboCD **Releases** that read a single platform **Context**. Those deployment resources are maintained in [`OKDP/okdp-sandbox`](https://github.com/OKDP/okdp-sandbox), not here.
+Upstream charts that only needed static values are no longer wrapped: the platform
+components install them directly (`cloudnative-pg`, `external-secrets`).
 
 ## Structure
 
 ```
 packages/
-├── system/             # Infrastructure & system packages
-│   ├── cert-manager/
-│   ├── cloudnative-pg/
-│   ├── cnpg-postgresql/
+├── system/             # Infrastructure & system charts
+│   ├── cert-manager/           # + trust-manager + cluster issuers (3 components)
+│   ├── cnpg-postgresql/        # database-server provider
 │   ├── coredns-patch/
 │   ├── dns-server/
-│   ├── external-secrets/
 │   ├── ingress-nginx/
-│   ├── keycloak/
-│   ├── kubauth/
-│   ├── kubocd-webhooks/
+│   ├── keycloak/               # database-server consumer
 │   ├── local-secrets-provider/
-│   ├── tools/
+│   ├── tools/                  # + deletion protection (ValidatingAdmissionPolicy)
 │   └── vault/
-└── services/           # Services
-    └── seaweedfs/
-sandbox-dependencies-values.yaml   # OCI publish target (packageRepository), the source of truth used by CI
+└── services/
+    └── seaweedfs/              # s3 provider
+docs/components/        # the platform components built from these charts (for okdp-sandbox)
+scripts/vendor-charts.sh
+sandbox-dependencies-values.yaml   # release OCI repository (packageRepository), read by CI
 ```
 
-Key paths:
+## Charts
 
-- [`packages/system`](./packages/system): infrastructure and platform foundation packages.
-- [`packages/services`](./packages/services): data and application service packages.
-- [`sandbox-dependencies-values.yaml`](./sandbox-dependencies-values.yaml): the OCI repository packages are published to.
+The chart `version` is `<upstream version>-<OKDP version>`; release-please owns the OKDP
+half. Each chart's README documents its parameters and what changed from the KuboCD package.
 
-## Packages
-
-Each package is a single KuboCD manifest under `packages/<layer>/<name>/`, and the `tag` field of that manifest is the published package version. Adding a package means adding a manifest there and a row in the tables below.
-
-### System
-
-| Package | Tag | Description |
+| Chart | Version | Description |
 | --- | --- | --- |
-| [`cert-manager`](./packages/system/cert-manager) | `1.17.1-p08` | cert-manager, with the optional trust-manager bundle and cluster certificate issuers |
-| [`cloudnative-pg`](./packages/system/cloudnative-pg) | `1.29.1-p01` | CloudNativePG operator covering the PostgreSQL cluster lifecycle |
-| [`cnpg-postgresql`](./packages/system/cnpg-postgresql) | `18.3-p03` | Logical PostgreSQL databases, owners and credentials managed by CloudNativePG |
-| [`coredns-patch`](./packages/system/coredns-patch) | `1.0.0-p05` | CoreDNS patch resolving the ingress suffix to the ingress controller |
-| [`dns-server`](./packages/system/dns-server) | `1.0.0-p04` | Lightweight DNS server resolving the sandbox domain for local development |
-| [`external-secrets`](./packages/system/external-secrets) | `0.15.1-p02` | External Secrets Operator, syncing secrets from an external backend into Kubernetes Secrets |
-| [`ingress-nginx`](./packages/system/ingress-nginx) | `4.12.1-p03` | NGINX ingress controller, in `nodePort`, `hostPort` or `metallb` mode |
-| [`keycloak`](./packages/system/keycloak) | `24.4.11-p14` | Keycloak identity and access management |
-| [`kubauth`](./packages/system/kubauth) | `0.3.0-snapshot-p01` | Kubernetes-native OIDC provider, where users, groups and OIDC clients are custom resources |
-| [`kubocd-webhooks`](./packages/system/kubocd-webhooks) | `v0.3.2-p01` | Second stage of the KuboCD deployment |
-| [`local-secrets-provider`](./packages/system/local-secrets-provider) | `1.0.0-p06` | Kubernetes Secrets provisioned from a static list, a local stand-in for a secret manager |
-| [`tools`](./packages/system/tools) | `1.0.0-p01` | Reloader, replicator and secret-generator utilities |
-| [`vault`](./packages/system/vault) | `0.29.1-p01` | HashiCorp Vault, the secret backend a SecretStore points at, in dev mode by default |
+| [`cert-manager`](./packages/system/cert-manager) | `1.21.2-1.0.0` | cert-manager, trust-manager, cluster issuers and the CA bundle |
+| [`cnpg-postgresql`](./packages/system/cnpg-postgresql) | `18.3.0-1.0.0` | PostgreSQL cluster (CloudNativePG) with logical databases; one `database-server` output each |
+| [`coredns-patch`](./packages/system/coredns-patch) | `1.0.0-1.0.0` | CoreDNS patch resolving the ingress suffix to the ingress controller |
+| [`dns-server`](./packages/system/dns-server) | `1.47.1-1.0.0` | Lightweight DNS server (CoreDNS) resolving the sandbox domain for local development |
+| [`ingress-nginx`](./packages/system/ingress-nginx) | `4.15.1-1.0.0` | NGINX ingress controller, in `nodePort`, `hostPort` or `metallb` mode (retired upstream: final release) |
+| [`keycloak`](./packages/system/keycloak) | `7.3.2-1.0.0` | Keycloak identity and access management on keycloakx and the official image (consumes a `database-server` connection) |
+| [`local-secrets-provider`](./packages/system/local-secrets-provider) | `1.0.0-1.0.0` | Secrets provisioned from a static list and replicated, a local stand-in for a secret manager |
+| [`tools`](./packages/system/tools) | `1.0.0-1.0.0` | Reloader, replicator, and the `okdp.io/protected` deletion protection |
+| [`vault`](./packages/system/vault) | `0.34.1-1.0.0` | HashiCorp Vault, the secret backend a SecretStore points at, in dev mode by default |
+| [`seaweedfs`](./packages/services/seaweedfs) | `4.47.0-1.0.0` | SeaweedFS object store (S3, IAM, STS); one `s3` output |
 
-### Services
+## Working on a chart
 
-| Package | Tag | Description |
-| --- | --- | --- |
-| [`seaweedfs`](./packages/services/seaweedfs) | `4.17.0-p07` | Distributed file system exposing the S3, IAM and STS endpoints used as default object storage |
-
-## Building Packages
-
-The target OCI repository is defined once in [`sandbox-dependencies-values.yaml`](./sandbox-dependencies-values.yaml) (`packageRepository`). Use the same value for local builds.
-
-### Basic Build Command
+The charts depend on `okdp-lib` from a sibling checkout of `OKDP/okdp-lib` during the
+no-KuboCD migration (`file://../../../../okdp-lib`):
 
 ```bash
-# Build a system package
-kubocd package ./packages/system/cert-manager/cert-manager.yaml --ociRepoPrefix quay.io/okdp/sandbox-dependencies
-
-# Build a service package
-kubocd package ./packages/services/seaweedfs/seaweedfs.yaml --ociRepoPrefix quay.io/okdp/sandbox-dependencies
-```
-
-### Custom OCI Repository
-
-```bash
-# Using a different OCI registry
-kubocd package ./packages/system/cert-manager/cert-manager.yaml --ociRepoPrefix myregistry.io/my-org/packages
-
-# Using a different prefix for packages
-kubocd package ./packages/services/seaweedfs/seaweedfs.yaml --ociRepoPrefix harbor.company.com/okdp-prod
-```
-
-### Examples
-
-```bash
-# Build all system packages
-for pkg in packages/system/*/; do
-  kubocd package "$pkg"*.yaml --ociRepoPrefix quay.io/okdp/sandbox-dependencies
+helm dependency build packages/system/keycloak
+for f in packages/system/keycloak/ci/*-values.yaml; do
+  helm lint packages/system/keycloak -f "$f"
+  helm template keycloak-keycloak packages/system/keycloak -n keycloak -f "$f"
 done
+scripts/vendor-charts.sh packages/system/keycloak           # refresh vendor/ after a version bump
+scripts/vendor-charts.sh --check packages/system/keycloak   # vendor/ matches vendor.yaml
 
-# Build a specific package
-kubocd package ./packages/system/keycloak/keycloak.yaml --ociRepoPrefix quay.io/okdp/sandbox-dependencies
+# The CI checks, from a checkout of OKDP/gh-workflows next to this repository:
+../gh-workflows/scripts/okdp-chart-guard.sh packages/system/keycloak
+../gh-workflows/scripts/okdp-chart-test.sh packages/system/keycloak
 ```
-
-### Build Output
-
-Packages are pushed to: `{ociRepoPrefix}/{package-name}:{tag}`
-
-Example: `quay.io/okdp/sandbox-dependencies/seaweedfs:4.17.0-p07`
 
 ## GitHub CI and Publishing
 
-The GitHub workflows share the reusable [`kubocd-package-template.yml`](./.github/workflows/kubocd-package-template.yml) workflow for both CI validation and publishing.
+The workflows call the reusable
+[`okdp-chart-ci.yml`](https://github.com/OKDP/gh-workflows#okdp-chart-ci-okdp-chart-ciyml)
+of `OKDP/gh-workflows`: the chart guard (forbidden patterns, descriptor, schema, vendored
+charts), `helm lint`, `helm template` of every `ci/*-values.yaml`, `kubeconform`, then
+`helm package` and `helm push`.
 
-### CI Workflow
+- [`ci.yml`](./.github/workflows/ci.yml) (push, pull request, dispatch): the changed charts,
+  pushed to `oci://ghcr.io/okdp/sandbox-dependencies/charts/<chart>:0.0.0-ci.<branch>.g<sha>`
+  (validation only for pull requests from forks).
+- [`release-please.yml`](./.github/workflows/release-please.yml): release-please keeps a
+  release pull request; [`compose-oci-tag.sh`](./.github/scripts/compose-oci-tag.sh) writes
+  `<upstream>-<release-please version>` into each released `Chart.yaml`. Merging it
+  publishes the released charts to `oci://quay.io/okdp/sandbox-charts/<chart>:<version>`
+  (`REGISTRY_USERNAME`, `REGISTRY_ROBOT_TOKEN`); a version already published fails.
+- [`publish.yml`](./.github/workflows/publish.yml) (dispatch): republishes every chart whose
+  version is not on the registry yet.
 
-[`ci.yml`](./.github/workflows/ci.yml) runs on pushes, pull requests, and manual dispatch. It:
-
-- reads the OCI package prefix from [`sandbox-dependencies-values.yaml`](./sandbox-dependencies-values.yaml);
-- builds **every** package manifest under `packages/` that contains `modules:`;
-- pushes CI test packages to the repository-scoped GitHub Container Registry path.
-
-Building covers every package, so packaging errors are caught repo-wide. Deployment of the published packages (Flux/KuboCD bootstrap, contexts, releases) and its end-to-end validation live in [`OKDP/okdp-sandbox`](https://github.com/OKDP/okdp-sandbox), not here.
-
-The KuboCD package CI job is skipped for fork pull requests because GitHub intentionally gives those runs a read-only token, which cannot push to GHCR.
-
-### CI Registry
-
-The `ci` workflow builds packages for CI validation and pushes them to the repository-scoped GitHub Container Registry path:
-
-```text
-ghcr.io/okdp/sandbox-dependencies/sandbox-dependencies/{package-name}:{tag}
-```
-
-### Release Publishing
-
-Published release packages use the public repository from [`sandbox-dependencies-values.yaml`](./sandbox-dependencies-values.yaml):
-
-```text
-quay.io/okdp/sandbox-dependencies/{package-name}:{tag}
-```
-
-[`publish.yml`](./.github/workflows/publish.yml) can be dispatched manually and publishes packages to Quay using `REGISTRY_USERNAME` and `REGISTRY_ROBOT_TOKEN`. [`release-please.yml`](./.github/workflows/release-please.yml) triggers it when Release Please creates a new release after a merged pull request.
+The release repository is `packageRepository` in
+[`sandbox-dependencies-values.yaml`](./sandbox-dependencies-values.yaml).
 
 ---
 
@@ -167,3 +132,6 @@ Contributions follow the [OKDP contribution guide](https://github.com/OKDP/.gith
 <a href="https://okdp.io">
   <img src="https://okdp.io/logos/okdp-notext.svg" height="20px" style="margin: 0 2px;" />
 </a>
+
+│   ├── kubauth/
+| [`kubauth`](./packages/system/kubauth) | `0.3.0-snapshot-p01` | Kubernetes-native OIDC provider, where users, groups and OIDC clients are custom resources |
