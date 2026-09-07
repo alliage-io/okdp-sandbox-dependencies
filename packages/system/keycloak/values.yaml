@@ -1,0 +1,75 @@
+# Platform values (platform/platform-values.yaml). Never set per instance.
+# Reads global.okdp.ingress.{suffix,className} and certificateIssuers.selfSigned.name.
+global:
+  okdp: {}
+
+# External connections, one values layer per connection file. db must name one.
+connections: {}
+
+adminUser: admin
+# Stored in the Secret <release>-admin.
+adminPassword: admin
+# Host name, the ingress suffix is appended (the platform OIDC issuer points here).
+ingressHost: keycloak
+# Memory request in GiB / CPU request in vCPU. Limits are twice the requests.
+memoryGi: 2
+cpu: 0.5
+
+# database-server connection (PostgreSQL) holding the Keycloak schema (required).
+# Its credentials Secret holds the keys username and password.
+db: ""
+
+realm:
+  name: master
+  displayName: ""
+  accessTokenLifespan: 3600
+  # At least accessTokenLifespan: Keycloak caps a token's life by the session.
+  ssoSessionIdleTimeout: 3600
+  ssoSessionMaxLifespan: 36000
+  # User profile: Keycloak keeps only the attributes it declares. username, email,
+  # firstName and lastName are always declared; attributes adds more (admin only
+  # unless permissions say otherwise), e.g. [{name: comment}, {name: uid}] for the
+  # console's user management. unmanagedAttributePolicy: "" (drop the others),
+  # ENABLED, ADMIN_EDIT or ADMIN_VIEW.
+  userProfile:
+    unmanagedAttributePolicy: ""
+    attributes: []
+
+# Anonymous dynamic client registration, limited to trustedHosts. Off, the policy
+# stays registered with no trusted host (keycloak-config-cli removes what the realm
+# file stops declaring, and a realm without the policy accepts registrations from
+# anywhere). Defaults when empty: trustedHosts ["*.${suffix}", "*.svc.cluster.local"],
+# allowedScopes ["groups"].
+# checkSenderHost (Trusted Hosts policy, host-sending-registration-request-must-match):
+# also require the sender's address to resolve to a trusted host. Off by default: behind
+# the ingress the sender is the X-Forwarded-For client, a pod IP without reverse DNS,
+# so every registration from a pod (the oidc-dcr Jobs) would be refused. The redirect
+# URIs of a registered client must still be on trusted hosts (client-uris-must-match),
+# but any client that reaches Keycloak can register one: acceptable in the sandbox,
+# turn it on (or disable anonymous DCR) where the network is not trusted. With
+# enabled: false the check is always on (and no host is trusted).
+# Keycloak also applies, on its own, the anonymous policies Consent Required (users
+# approve each registered client) and Full Scope Disabled (the client's tokens carry
+# no realm role, so no groups claim): with enabled, consentRequired: false and
+# fullScopeAllowed: true (the defaults, how the clients declared below behave) have
+# the keycloak-config-cli Job remove them first (kcadm, Admin API).
+anonymousDCR:
+  enabled: false
+  trustedHosts: []
+  allowedScopes: []
+  checkSenderHost: false
+  consentRequired: false
+  fullScopeAllowed: true
+
+# Realm content. In redirectUris, webOrigins and trustedHosts, ${suffix} is replaced
+# by global.okdp.ingress.suffix. keycloak-config-cli applies it whenever it changes
+# and removes the role mappings it does not declare: grant roles here, e.g.
+#   users:
+#     - username: service-account-okdp-control-plane
+#       serviceAccountClientId: okdp-control-plane
+#       clientRoles: {master-realm: [view-users, query-users, manage-users, query-groups]}
+users: []
+groups: []
+roles: []
+clients: []
+clientScopes: []

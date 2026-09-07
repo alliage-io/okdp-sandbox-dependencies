@@ -1,0 +1,48 @@
+# Anonymous DCR on, default trusted hosts, bigger sizing, another database.
+global:
+  okdp:
+    ingress: {suffix: example.test, className: nginx}
+    certificateIssuers: {selfSigned: {name: corp-issuer}}
+connections:
+  pg:
+    contract: database-server
+    engine: postgresql
+    host: pg.example.test
+    port: 5433
+    dbName: iam
+    sslMode: require
+    secretRef: {name: iam-db}
+db: pg
+adminPassword: s3cret-admin
+ingressHost: sso
+cpu: 1
+memoryGi: 3.5
+realm:
+  name: okdp
+  userProfile:
+    unmanagedAttributePolicy: ADMIN_EDIT
+    attributes:
+      - name: department
+        displayName: Department
+        multivalued: true
+        permissions: {view: [admin, user], edit: [admin]}
+# The default allowedScopes of anonymous DCR is ["groups"]: a client scope the realm
+# must declare, or keycloak-config-cli cannot import the registration policy.
+# Consent kept (declared in the realm file); Full Scope Disabled removed (init container).
+anonymousDCR:
+  enabled: true
+  consentRequired: true
+clientScopes:
+  - name: groups
+    description: Groups scope
+    protocol: openid-connect
+    protocolMappers:
+      - name: groups
+        protocol: openid-connect
+        protocolMapper: oidc-group-membership-mapper
+        config:
+          full.path: "false"
+          access.token.claim: "true"
+          id.token.claim: "true"
+          userinfo.token.claim: "true"
+          claim.name: groups

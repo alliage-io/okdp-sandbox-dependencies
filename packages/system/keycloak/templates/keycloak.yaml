@@ -1,0 +1,1 @@
+{{ include "okdp.vendor.render" (dict "ctx" . "chart" "keycloakx" "values" (include "keycloak.upstream.values" . | fromYaml)) }}

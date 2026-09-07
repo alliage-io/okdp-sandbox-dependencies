@@ -1,0 +1,457 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "keycloak",
+  "type": "object",
+  "properties": {
+    "global": {
+      "type": "object",
+      "description": "Platform values, from platform/platform-values.yaml (global.okdp)."
+    },
+    "connections": {
+      "type": "object",
+      "description": "External connections, one values layer per connection file: the database-server connection referenced by db."
+    },
+    "okdp-lib": {
+      "type": "object",
+      "description": "Values slot Helm creates for the okdp-lib library dependency. Not a parameter."
+    },
+    "adminUser": {
+      "type": "string",
+      "default": "admin",
+      "title": "Admin user",
+      "description": "Keycloak admin username (master realm).",
+      "x-ui-group": "Admin",
+      "x-ui-order": 1,
+      "x-ui-columns": 2
+    },
+    "adminPassword": {
+      "type": "string",
+      "default": "admin",
+      "title": "Admin password",
+      "description": "Stored in the Secret <release>-admin.",
+      "x-ui-group": "Admin",
+      "x-ui-order": 2,
+      "x-ui-columns": 2,
+      "x-ui-widget": "password"
+    },
+    "ingressHost": {
+      "type": "string",
+      "default": "keycloak",
+      "title": "Ingress host",
+      "description": "Host name, the platform ingress suffix is appended. The OIDC issuer of the platform (global.okdp.oidc.issuerUri) points here.",
+      "x-ui-group": "Admin",
+      "x-ui-order": 3,
+      "x-ui-advanced": true
+    },
+    "memoryGi": {
+      "type": "number",
+      "default": 2,
+      "multipleOf": 0.25,
+      "minimum": 0.5,
+      "title": "Memory (GiB)",
+      "description": "Memory request in GiB. The limit is twice the request.",
+      "x-ui-group": "Resources",
+      "x-ui-order": 1,
+      "x-ui-columns": 2
+    },
+    "cpu": {
+      "type": "number",
+      "default": 0.5,
+      "multipleOf": 0.25,
+      "minimum": 0.25,
+      "title": "CPU (vCPU)",
+      "description": "CPU request in vCPU. The limit is twice the request.",
+      "x-ui-group": "Resources",
+      "x-ui-order": 2,
+      "x-ui-columns": 2
+    },
+    "db": {
+      "type": "string",
+      "title": "Database",
+      "description": "database-server connection (PostgreSQL) holding the Keycloak schema. Its credentials Secret holds the keys username and password.",
+      "x-okdp-connection-ref": {
+        "contract": "database-server"
+      },
+      "x-ui-group": "Database",
+      "x-ui-order": 1
+    },
+    "realm": {
+      "type": "object",
+      "title": "Realm",
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false,
+      "x-ui-group": "Realm",
+      "x-ui-order": 1,
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "Realm"
+        },
+        "displayName": {
+          "type": "string",
+          "default": "",
+          "title": "Display name"
+        },
+        "accessTokenLifespan": {
+          "type": "integer",
+          "default": 3600,
+          "title": "Access token lifespan (s)"
+        },
+        "ssoSessionIdleTimeout": {
+          "type": "integer",
+          "default": 3600,
+          "title": "SSO session idle timeout (s)",
+          "description": "At least accessTokenLifespan: Keycloak caps a token's life by the session."
+        },
+        "ssoSessionMaxLifespan": {
+          "type": "integer",
+          "default": 36000,
+          "title": "SSO session max lifespan (s)"
+        },
+        "userProfile": {
+          "type": "object",
+          "title": "User profile",
+          "description": "The realm's user profile: Keycloak keeps only the user attributes it declares. The default attributes (username, email, firstName, lastName) are always declared; the attributes below are added, readable and writable by administrators. Rendered on every run, so changes made in the console are reverted.",
+          "additionalProperties": false,
+          "properties": {
+            "unmanagedAttributePolicy": {
+              "type": "string",
+              "enum": [
+                "",
+                "ENABLED",
+                "ADMIN_EDIT",
+                "ADMIN_VIEW"
+              ],
+              "default": "",
+              "title": "Unmanaged attributes",
+              "description": "What happens to attributes the profile does not declare: empty (Keycloak's default) drops them, ENABLED keeps them for everyone, ADMIN_EDIT / ADMIN_VIEW for administrators only."
+            },
+            "attributes": {
+              "type": "array",
+              "title": "Attributes",
+              "description": "Extra user attributes (e.g. comment, uid of the console's user management).",
+              "items": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "displayName": {
+                    "type": "string",
+                    "description": "Default: the name."
+                  },
+                  "multivalued": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "permissions": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Who may view and edit it. Default: admin only.",
+                    "properties": {
+                      "view": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "admin",
+                            "user"
+                          ]
+                        }
+                      },
+                      "edit": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "admin",
+                            "user"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "anonymousDCR": {
+      "type": "object",
+      "title": "Anonymous client registration",
+      "additionalProperties": false,
+      "x-ui-group": "DCR",
+      "x-ui-order": 1,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "title": "Anonymous registration",
+          "description": "Let a client register itself without authenticating, limited to trustedHosts. Off, the policy stays registered with no trusted host, which turns every anonymous registration down. Needed only when global.okdp.oidc.clientProvisioning is dcr."
+        },
+        "trustedHosts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "Trusted hosts",
+          "description": "Default: *.<ingress suffix>, *.svc.cluster.local. ${suffix} is replaced by the ingress suffix."
+        },
+        "allowedScopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "Allowed scopes",
+          "description": "Default: groups."
+        },
+        "checkSenderHost": {
+          "type": "boolean",
+          "default": false,
+          "title": "Check the sender host",
+          "description": "Also require the address sending the registration to resolve to a trusted host (host-sending-registration-request-must-match). Off: behind the ingress the sender is a pod IP without reverse DNS, so registrations from pods would be refused; client redirect URIs must still be on trusted hosts. Turn it on where the network is not trusted."
+        },
+        "consentRequired": {
+          "type": "boolean",
+          "default": false,
+          "title": "Consent required",
+          "description": "Keep Keycloak's Consent Required policy: users approve each registered client at their first login. Off (the default, like the clients created beforehand), the policy is removed."
+        },
+        "fullScopeAllowed": {
+          "type": "boolean",
+          "default": true,
+          "title": "Full scope allowed",
+          "description": "Remove Keycloak's Full Scope Disabled policy, so a registered client's tokens carry the user's realm roles (the groups claim of the platform), like the clients created beforehand. Off, the policy stays and the tokens carry no role."
+        }
+      }
+    },
+    "users": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "username"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string",
+            "x-ui-widget": "password"
+          },
+          "serviceAccountClientId": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "clientRoles": {
+            "type": "object",
+            "description": "Client roles by client id, e.g. {master-realm: [view-users, query-users, manage-users, query-groups]} for the console's user management service account in the master realm.",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "title": "Users",
+      "x-ui-group": "Realm",
+      "x-ui-order": 2
+    },
+    "groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "title": "Groups",
+      "x-ui-group": "Realm",
+      "x-ui-order": 3
+    },
+    "roles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "title": "Realm roles",
+      "x-ui-group": "Realm",
+      "x-ui-order": 4
+    },
+    "clients": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "clientId"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "clientId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "publicClient": {
+            "type": "boolean"
+          },
+          "secret": {
+            "type": "string",
+            "x-ui-widget": "password"
+          },
+          "redirectUris": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "${suffix} is replaced by the ingress suffix."
+          },
+          "webOrigins": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "${suffix} is replaced by the ingress suffix."
+          },
+          "defaultClientScopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "optionalClientScopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "serviceAccountsEnabled": {
+            "type": "boolean"
+          },
+          "standardFlowEnabled": {
+            "type": "boolean"
+          },
+          "implicitFlowEnabled": {
+            "type": "boolean"
+          },
+          "directAccessGrantsEnabled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "title": "Clients",
+      "x-ui-group": "Realm",
+      "x-ui-order": 5
+    },
+    "clientScopes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "protocol": {
+            "type": "string"
+          },
+          "attributes": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "protocolMappers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "name"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "protocol": {
+                  "type": "string"
+                },
+                "protocolMapper": {
+                  "type": "string"
+                },
+                "config": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "title": "Client scopes",
+      "x-ui-group": "Realm",
+      "x-ui-order": 6
+    }
+  },
+  "required": [
+    "db",
+    "realm"
+  ],
+  "additionalProperties": false
+}

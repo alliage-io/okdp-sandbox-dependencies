@@ -1,0 +1,25 @@
+apiVersion: v2
+name: keycloak
+description: >-
+  Keycloak identity and access management: the platform OIDC provider, with one realm
+  (users, groups, realm and client roles, clients, client scopes, user profile) configured
+  by keycloak-config-cli. Its database is a database-server connection.
+type: application
+# <upstream>-<okdp semver>; the okdp half is owned by release-please.
+version: 7.3.2-1.0.0
+appVersion: "7.3.2"
+home: https://okdp.io
+sources:
+  - https://github.com/OKDP/sandbox-dependencies
+  - https://github.com/codecentric/helm-charts/tree/master/charts/keycloakx
+  - https://github.com/keycloak/keycloak
+  - https://github.com/adorsys/keycloak-config-cli
+annotations:
+  # Former KuboCD package roles/dependencies, kept for the catalog.
+  okdp.io/roles: identity
+  okdp.io/depends-on: "external-secrets,database-server,ingress"
+dependencies:
+  - name: okdp-lib
+    version: 0.1.0
+    # TODO(no-kubocd): switch to oci://quay.io/okdp/platform-charts
+    repository: file://../../../../okdp-lib

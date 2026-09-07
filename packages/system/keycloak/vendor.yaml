@@ -1,0 +1,9 @@
+# Upstream charts rendered by okdp.vendor.render (templates/*.yaml).
+# Refresh vendor/ with: scripts/vendor-charts.sh packages/system/keycloak
+charts:
+  - name: keycloakx
+    repository: https://codecentric.github.io/helm-charts
+    version: 7.3.2
+    # Its test hook (helm.sh/hook: test, a Selenium pod), off with test.enabled=false:
+    # Argo CD has no phase for test hooks, and the guard refuses them.
+    remove: [templates/test]

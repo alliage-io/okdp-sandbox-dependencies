@@ -1,0 +1,77 @@
+# The sandbox: the database is an external connection to cnpg-postgresql.
+global:
+  okdp:
+    ingress: {suffix: okdp.sandbox, className: nginx}
+    certificateIssuers: {selfSigned: {name: default-issuer}}
+connections:
+  keycloak-db:
+    contract: database-server
+    engine: postgresql
+    host: cnpg-system-cnpg-postgresql-rw.cnpg-system.svc.cluster.local
+    port: 5432
+    dbName: keycloak
+    secretRef: {name: creds-keycloak-db}
+db: keycloak-db
+realm:
+  name: master
+  displayName: OKDP internal Realm
+  accessTokenLifespan: 3600
+  userProfile:
+    attributes:
+      - {name: comment}
+      - {name: uid}
+users:
+  - {username: bob, email: bob@okdp.io, firstName: bob, lastName: bob, password: bob, roles: [data_engineer]}
+  - {username: alice, email: alice@okdp.io, firstName: alice, lastName: alice, password: alice, roles: [platform_admin], groups: [admins]}
+  - {username: svc-polaris-api-admin, serviceAccountClientId: svc-polaris-api-admin, roles: [polaris_service_admin]}
+  # The console's user management (Keycloak Admin API).
+  - username: service-account-okdp-control-plane
+    serviceAccountClientId: okdp-control-plane
+    clientRoles: {master-realm: [view-users, query-users, manage-users, query-groups]}
+groups:
+  - name: admins
+roles:
+  - name: data_engineer
+  - name: platform_admin
+  - name: polaris_service_admin
+clients:
+  - clientId: okdp-ui
+    name: okdp-ui
+    publicClient: true
+    redirectUris: ["https://okdp-ui.${suffix}", "https://okdp-ui.${suffix}/*"]
+    webOrigins: ["https://okdp-ui.{{ .Context.ingress.suffix }}"]
+    defaultClientScopes: [web-origins, acr, roles, profile, groups, basic, email]
+    optionalClientScopes: [offline_access]
+  - clientId: svc-polaris-api-admin
+    name: svc-polaris-api-admin
+    secret: myPolarisAdminSecret
+    serviceAccountsEnabled: true
+    standardFlowEnabled: false
+    implicitFlowEnabled: false
+    directAccessGrantsEnabled: false
+    defaultClientScopes: [groups, roles, profile, email]
+  - clientId: okdp-control-plane
+    secret: myControlPlaneSecret
+    serviceAccountsEnabled: true
+    standardFlowEnabled: false
+    directAccessGrantsEnabled: false
+# The sandbox registers the services' clients by DCR (clientProvisioning: dcr): Keycloak's
+# Consent Required and Full Scope Disabled policies are removed.
+anonymousDCR:
+  enabled: true
+  allowedScopes: [profile, email, roles, groups, offline_access]
+clientScopes:
+  - name: groups
+    description: Groups scope
+    protocol: openid-connect
+    attributes:
+      include.in.token.scope: "false"
+      display.on.consent.screen: "true"
+    protocolMappers:
+      - name: roles_map_to_groups
+        protocol: openid-connect
+        protocolMapper: oidc-usermodel-realm-role-mapper
+        config:
+          access.token.claim: "true"
+          claim.name: groups
+          multivalued: "true"

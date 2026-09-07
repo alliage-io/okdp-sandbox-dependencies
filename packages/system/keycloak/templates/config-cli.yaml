@@ -1,0 +1,156 @@
+{{- /*
+keycloak-config-cli (the upstream adorsys image) applies the realm file after every
+install and upgrade: a post-install/post-upgrade hook Job (Argo CD PostSync). The realm
+file holds client secrets and user passwords: it is a Secret, not a ConfigMap.
+keycloak-config-cli skips the import when the file did not change (checksum kept in
+the realm) and otherwise makes the realm match it, role mappings included.
+With anonymousDCR.enabled, an init container first removes Keycloak's own anonymous
+client registration policies the values turn off (keycloak.dcr.removedPolicies):
+keycloak-config-cli only removes what it created, never these defaults.
+*/ -}}
+{{- $name := include "okdp.fullname" (dict "ctx" . "suffix" "config-cli") -}}
+{{- $realmSecret := include "okdp.fullname" (dict "ctx" . "suffix" "realm") -}}
+{{- $realm := include "keycloak.realm" . -}}
+{{- $removedPolicies := include "keycloak.dcr.removedPolicies" . -}}
+{{- $keycloakUrl := printf "http://%s-http.%s.svc.cluster.local/" (include "okdp.fullname" .) .Release.Namespace -}}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $realmSecret }}
+  labels:
+    {{- include "okdp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: keycloak-config-cli
+type: Opaque
+stringData:
+  realm.json: {{ $realm | quote }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "okdp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: keycloak-config-cli
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: hook-succeeded,before-hook-creation
+    helm.sh/hook-weight: "5"
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        {{- include "okdp.labels" . | nindent 8 }}
+        app.kubernetes.io/component: keycloak-config-cli
+      annotations:
+        checksum/realm: {{ $realm | sha256sum }}
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      {{- if $removedPolicies }}
+      initContainers:
+        - name: dcr-policies
+          image: {{ include "keycloak.image" . }}
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/bash", "-ec"]
+          args:
+            - |
+              kcadm() { /opt/keycloak/bin/kcadm.sh "$@" --config /tmp/kcadm.config; }
+              for i in $(seq 60); do
+                kcadm config credentials --server "$KEYCLOAK_URL" --realm master \
+                  --user "$KEYCLOAK_USER" --password "$KEYCLOAK_PASSWORD" && break
+                [ "$i" -lt 60 ] || exit 1
+                sleep 5
+              done
+              policies=$(kcadm get components -r "$REALM" \
+                -q type=org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy \
+                --fields id,providerId,subType --format csv --noquotes)
+              for provider in $REMOVED_POLICIES; do
+                for id in $(printf '%s\n' "$policies" | grep ",$provider,anonymous$" | cut -d, -f1); do
+                  echo "removing the anonymous client registration policy $provider ($id)"
+                  kcadm delete "components/$id" -r "$REALM"
+                done
+              done
+          env:
+            - name: KEYCLOAK_URL
+              value: {{ $keycloakUrl | quote }}
+            - name: KEYCLOAK_USER
+              value: {{ .Values.adminUser | quote }}
+            - name: KEYCLOAK_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "keycloak.adminSecret" . }}
+                  key: admin-password
+            - name: REALM
+              value: {{ .Values.realm.name | quote }}
+            - name: REMOVED_POLICIES
+              value: {{ $removedPolicies | quote }}
+            - name: HOME
+              value: /tmp
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      {{- end }}
+      containers:
+        - name: keycloak-config-cli
+          image: {{ include "keycloak.configCli.image" . }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: KEYCLOAK_URL
+              value: {{ $keycloakUrl | quote }}
+            - name: KEYCLOAK_USER
+              value: {{ .Values.adminUser | quote }}
+            - name: KEYCLOAK_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "keycloak.adminSecret" . }}
+                  key: admin-password
+            - name: KEYCLOAK_AVAILABILITYCHECK_ENABLED
+              value: "true"
+            - name: KEYCLOAK_AVAILABILITYCHECK_TIMEOUT
+              value: 300s
+            - name: IMPORT_FILES_LOCATIONS
+              value: /config/*
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 768Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: config
+              mountPath: /config
+              readOnly: true
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: config
+          secret:
+            secretName: {{ $realmSecret }}

@@ -5,7 +5,7 @@
   "packages/system/coredns-patch": "1.0.0",
   "packages/system/dns-server": "1.0.0",
   "packages/system/ingress-nginx": "1.0.0",
-  "packages/system/keycloak": "1.0.1",
+  "packages/system/keycloak": "1.0.0",
   "packages/system/kubauth": "1.0.1",
   "packages/system/local-secrets-provider": "1.0.0",
   "packages/system/tools": "1.0.0",
