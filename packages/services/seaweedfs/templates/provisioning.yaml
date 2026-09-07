@@ -1,0 +1,86 @@
+{{- /*
+Seeds buckets[].paths: an empty `.keep` object in each prefix, for consumers that
+need the prefix to exist (Spark's FsHistoryProvider). A post-install/post-upgrade
+hook Job, idempotent, after the upstream bucket hook (weight -5) created the buckets.
+It runs the SeaweedFS image of the store: `weed shell` waits for each bucket and
+`weed filer.copy` writes the marker through the filer (buckets are
+/buckets/<name>/), so no S3 identity is involved. Replaces the former
+seaweedfs-provisioning chart and its MinIO client.
+*/ -}}
+{{- $seed := list -}}
+{{- range .Values.buckets | default list }}{{ if .paths }}{{ $seed = append $seed . }}{{ end }}{{ end -}}
+{{- if $seed }}
+{{- $name := include "okdp.fullname" (dict "ctx" . "suffix" "provisioning") }}
+{{- $master := printf "%s-master.%s:9333" .Release.Name .Release.Namespace }}
+{{- $filer := printf "%s-filer-client.%s:8888" .Release.Name .Release.Namespace }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "okdp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: provisioning
+data:
+  provision.sh: |
+    #!/bin/sh
+    set -eu
+    deadline=$(( $(date +%s) + 300 ))
+    shell() { echo "$1" | weed shell -master={{ $master }} -filer={{ $filer }}; }
+    bucket_exists() { shell s3.bucket.list | awk '{print $1}' | grep -Fxq "$1"; }
+    # The store may still be converging when the hook starts: wait, do not fail.
+    wait_bucket() {
+      echo ">> waiting for bucket $1"
+      until bucket_exists "$1" 2>/dev/null; do
+        if [ "$(date +%s)" -ge "${deadline}" ]; then
+          echo "!! timed out waiting for bucket $1"
+          exit 1
+        fi
+        sleep 3
+      done
+    }
+    mkdir -p /tmp/marker && : > /tmp/marker/.keep
+    {{- range $b := $seed }}
+    wait_bucket {{ $b.name | quote }}
+    {{- range $p := $b.paths }}
+    echo ">> seeding {{ $b.name }}/{{ trimAll "/" $p }}/.keep"
+    weed filer.copy /tmp/marker/.keep {{ printf "http://%s/buckets/%s/%s/" $filer $b.name (trimAll "/" $p) | quote }}
+    {{- end }}
+    {{- end }}
+    echo ">> provisioning complete"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "okdp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: provisioning
+  annotations:
+    # Recreated on every install and upgrade (a Job is immutable): an added path is
+    # always picked up. Writing an existing marker again changes nothing.
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: 20
+  template:
+    metadata:
+      labels:
+        {{- include "okdp.labels" . | nindent 8 }}
+        app.kubernetes.io/component: provisioning
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: provision
+          image: {{ printf "chrislusf/seaweedfs:%s" (include "seaweedfs.okdp.imageTag" .) | quote }}
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "/scripts/provision.sh"]
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+      volumes:
+        - name: scripts
+          configMap:
+            name: {{ $name }}
+{{- end }}

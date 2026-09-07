@@ -1,0 +1,161 @@
+{{- /*
+Authentication of the store: the former auth-config module
+(oci://quay.io/okdp/charts/seaweedfs-auth-config 1.1.0), taken in here. That chart
+read the grants' Secrets with `lookup` to write the S3 configuration and hashed
+the filer password with `htpasswd` (random salt): both differ between Helm and
+Argo CD. Now:
+- the S3 configuration Secret is written by ESO, which reads the root and grant
+  keys from their Secrets (kubernetes provider, same namespace);
+- the filer basic auth file uses the nginx {PLAIN} scheme, deterministic (the
+  password is already in the values and in a Secret).
+*/ -}}
+{{- $root := include "seaweedfs.okdp.rootSecret" . -}}
+{{- $reader := include "seaweedfs.okdp.grantsReader" . -}}
+{{- $stsKey := include "seaweedfs.okdp.stsKeySecret" . -}}
+{{- $secrets := list $root $stsKey -}}
+{{- range .Values.grants | default list }}{{ $secrets = append $secrets .credentialsSecret.name }}{{ end -}}
+{{- $ids := include "seaweedfs.okdp.identities" . | fromYamlArray -}}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $root }}
+  labels:
+    {{- include "okdp.labels" . | nindent 4 }}
+type: Opaque
+stringData:
+  accessKey: {{ required "seaweedfs: rootAccessKey is required" .Values.rootAccessKey | quote }}
+  secretKey: {{ required "seaweedfs: rootSecretKey is required (no default: the secret key of the store's root identity)" .Values.rootSecretKey | quote }}
+---
+# nginx.ingress.kubernetes.io/auth-secret of the filer ingress.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "seaweedfs.okdp.filerAuthSecret" . }}
+  labels:
+    {{- include "okdp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: filer
+type: Opaque
+stringData:
+  auth: {{ printf "%s:{PLAIN}%s" (required "seaweedfs: username is required" .Values.username) (required "seaweedfs: password is required (no default)" .Values.password) | quote }}
+---
+# IAM / STS configuration of the S3 gateway (mounted at /etc/seaweed/iam). SeaweedFS
+# serves no STS without a signing key: one is generated once by ESO (frozen, 48
+# random characters, base64 as iam.json expects) and ESO writes iam.json with it.
+{{ include "okdp.generatedSecret" (dict "ctx" . "name" $stsKey
+     "keys" (list (dict "key" "signingKey" "length" 48 "transform" "b64enc"))) }}
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: {{ include "seaweedfs.okdp.iamSecret" . }}
+  labels:
+    {{- include "okdp.labels" . | nindent 4 }}
+spec:
+  refreshInterval: 5m
+  secretStoreRef:
+    kind: SecretStore
+    name: {{ $reader }}
+  target:
+    name: {{ include "seaweedfs.okdp.iamSecret" . }}
+    creationPolicy: Owner
+    template:
+      engineVersion: v2
+      data:
+        iam.json: {{ include "seaweedfs.okdp.iamTemplate" . | quote }}
+  data:
+    - secretKey: signingKey
+      remoteRef: {key: {{ $stsKey }}, property: signingKey}
+---
+# ESO reads the root and grant keys (same namespace) and writes the S3 configuration.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $reader }}
+  labels:
+    {{- include "okdp.labels" . | nindent 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $reader }}
+  labels:
+    {{- include "okdp.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: {{ $secrets | uniq | toJson }}
+    verbs: ["get"]
+  # ESO's kubernetes provider checks its access with a SelfSubjectRulesReview.
+  - apiGroups: ["authorization.k8s.io"]
+    resources: ["selfsubjectrulesreviews"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $reader }}
+  labels:
+    {{- include "okdp.labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $reader }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $reader }}
+---
+apiVersion: external-secrets.io/v1
+kind: SecretStore
+metadata:
+  name: {{ $reader }}
+  labels:
+    {{- include "okdp.labels" . | nindent 4 }}
+spec:
+  provider:
+    kubernetes:
+      remoteNamespace: {{ .Release.Namespace }}
+      server:
+        url: https://kubernetes.default.svc
+        caProvider:
+          type: ConfigMap
+          name: kube-root-ca.crt
+          key: ca.crt
+      auth:
+        serviceAccount:
+          name: {{ $reader }}
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: {{ include "seaweedfs.okdp.s3ConfigSecret" . }}
+  labels:
+    {{- include "okdp.labels" . | nindent 4 }}
+spec:
+  refreshInterval: 5m
+  secretStoreRef:
+    kind: SecretStore
+    name: {{ $reader }}
+  target:
+    name: {{ include "seaweedfs.okdp.s3ConfigSecret" . }}
+    creationPolicy: Owner
+    template:
+      engineVersion: v2
+      data:
+        {{- /* The ESO template: identities with their keys, JSON-escaped by ESO (toJson). */}}
+        {{- $parts := list }}
+        {{- range $i, $id := $ids }}
+        {{- $parts = append $parts (printf "{\"name\":%s,\"credentials\":[{\"accessKey\":{{ .id%d_access | toJson }},\"secretKey\":{{ .id%d_secret | toJson }}}],\"actions\":%s}" (toJson $id.name) $i $i (toJson $id.actions)) }}
+        {{- end }}
+        seaweedfs_s3_config: {{ printf "{\"identities\":[%s]}" (join "," $parts) | quote }}
+  data:
+    - secretKey: id0_access
+      remoteRef: {key: {{ $root }}, property: accessKey}
+    - secretKey: id0_secret
+      remoteRef: {key: {{ $root }}, property: secretKey}
+    {{- range $i, $g := .Values.grants | default list }}
+    - secretKey: id{{ add1 $i }}_access
+      remoteRef: {key: {{ $g.credentialsSecret.name }}, property: {{ $g.credentialsSecret.accessKeyKey | default "accessKey" }}}
+    - secretKey: id{{ add1 $i }}_secret
+      remoteRef: {key: {{ $g.credentialsSecret.name }}, property: {{ $g.credentialsSecret.secretKeyKey | default "secretKey" }}}
+    {{- end }}

@@ -1,0 +1,244 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "seaweedfs",
+  "type": "object",
+  "properties": {
+    "global": {
+      "type": "object",
+      "description": "Platform values, from platform/platform-values.yaml (global.okdp)."
+    },
+    "connections": {
+      "type": "object",
+      "description": "External connections, one values layer per connection file. Not used by this chart."
+    },
+    "okdp-lib": {
+      "type": "object",
+      "description": "Values slot Helm creates for the okdp-lib library dependency. Not a parameter."
+    },
+    "username": {
+      "type": "string",
+      "default": "admin",
+      "title": "Username",
+      "description": "Basic auth user of the filer UI.",
+      "x-ui-group": "Admin",
+      "x-ui-order": 1,
+      "x-ui-columns": 2
+    },
+    "password": {
+      "type": "string",
+      "minLength": 8,
+      "title": "Password",
+      "description": "Basic auth password of the filer UI. No default: a password shipped with a chart ends up in production.",
+      "x-ui-group": "Admin",
+      "x-ui-order": 2,
+      "x-ui-columns": 2,
+      "x-ui-widget": "password"
+    },
+    "rootAccessKey": {
+      "type": "string",
+      "default": "okdpadmin",
+      "minLength": 3,
+      "maxLength": 20,
+      "title": "Root access key",
+      "description": "Access key of the store's root (Admin) identity, used by the bucket provisioning.",
+      "x-ui-group": "Admin",
+      "x-ui-order": 3,
+      "x-ui-columns": 2,
+      "x-ui-advanced": true
+    },
+    "rootSecretKey": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 40,
+      "title": "Root secret key",
+      "description": "Secret key of the root identity. No default.",
+      "x-ui-group": "Admin",
+      "x-ui-order": 4,
+      "x-ui-columns": 2,
+      "x-ui-advanced": true,
+      "x-ui-widget": "password"
+    },
+    "stsRoleArn": {
+      "type": "string",
+      "default": "arn:aws:iam::000000000000:role/S3WriteRole",
+      "title": "STS role ARN",
+      "x-ui-group": "Admin",
+      "x-ui-order": 5,
+      "x-ui-advanced": true
+    },
+    "consoleHost": {
+      "type": "string",
+      "default": "",
+      "title": "Console host",
+      "description": "Host name of the filer UI, the ingress suffix is appended. Default: seaweedfs-<namespace>.",
+      "x-ui-group": "Admin",
+      "x-ui-order": 6,
+      "x-ui-advanced": true,
+      "x-ui-columns": 2
+    },
+    "apiHost": {
+      "type": "string",
+      "default": "",
+      "title": "S3 API host",
+      "description": "Host name of the S3 API, the ingress suffix is appended. Default: seaweedfs-<namespace>-api.",
+      "x-ui-group": "Admin",
+      "x-ui-order": 7,
+      "x-ui-advanced": true,
+      "x-ui-columns": 2
+    },
+    "volumeReplicas": {
+      "type": "integer",
+      "default": 1,
+      "minimum": 1,
+      "title": "Volume replicas",
+      "x-ui-group": "Storage",
+      "x-ui-order": 1,
+      "x-ui-widget": "stepper",
+      "x-ui-columns": 2
+    },
+    "masterStorage": {
+      "type": "string",
+      "default": "1",
+      "title": "Master size (GiB)",
+      "x-ui-group": "Storage",
+      "x-ui-order": 2,
+      "x-ui-columns": 2,
+      "x-ui-advanced": true
+    },
+    "masterLogStorage": {
+      "type": "string",
+      "default": "0.5",
+      "title": "Master log size (GiB)",
+      "x-ui-group": "Storage",
+      "x-ui-order": 3,
+      "x-ui-columns": 2,
+      "x-ui-advanced": true
+    },
+    "volumeStorage": {
+      "type": "string",
+      "default": "2",
+      "title": "Volume size (GiB)",
+      "x-ui-group": "Storage",
+      "x-ui-order": 4,
+      "x-ui-columns": 2
+    },
+    "filerStorage": {
+      "type": "string",
+      "default": "0.5",
+      "title": "Filer size (GiB)",
+      "x-ui-group": "Storage",
+      "x-ui-order": 5,
+      "x-ui-columns": 2
+    },
+    "filerLogStorage": {
+      "type": "string",
+      "default": "0.5",
+      "title": "Filer log size (GiB)",
+      "x-ui-group": "Storage",
+      "x-ui-order": 6,
+      "x-ui-columns": 2,
+      "x-ui-advanced": true
+    },
+    "grants": {
+      "type": "array",
+      "title": "Grants",
+      "description": "S3 identities, one per principal. Its keys are read by ESO from credentialsSecret (a Secret of this namespace). actions are SeaweedFS verbs (Read, Write, List, Tagging, Admin), scoped to buckets when buckets is set; sts marks a principal allowed to assume the STS role (SeaweedFS only grants it to an Admin identity).",
+      "x-ui-group": "Access",
+      "x-ui-order": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "principal",
+          "credentialsSecret"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "principal": {
+            "type": "string"
+          },
+          "credentialsSecret": {
+            "type": "object",
+            "required": [
+              "name",
+              "accessKeyKey",
+              "secretKeyKey"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "accessKeyKey": {
+                "type": "string",
+                "default": "accessKey"
+              },
+              "secretKeyKey": {
+                "type": "string",
+                "default": "secretKey"
+              }
+            }
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "buckets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sts": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      }
+    },
+    "buckets": {
+      "type": "array",
+      "title": "Buckets",
+      "description": "Buckets created at startup. paths seeds prefixes for consumers that require them to exist beforehand.",
+      "x-ui-group": "Access",
+      "x-ui-order": 2,
+      "items": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "anonymousRead": {
+            "type": "boolean",
+            "default": false
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "outputSecretRef": {
+      "type": "string",
+      "default": "",
+      "title": "Published credentials Secret",
+      "description": "secretRef of the published s3 connection, a Secret consumers can use (e.g. one replicated to every namespace). Empty: none, each consumer brings its own identity.",
+      "x-ui-group": "Access",
+      "x-ui-order": 3,
+      "x-ui-advanced": true
+    }
+  },
+  "required": [
+    "password",
+    "rootSecretKey"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,24 @@
+# Scoped grants, an STS principal, buckets with seeded paths.
+global:
+  okdp:
+    ingress: {suffix: example.test, className: nginx}
+    certificateIssuers: {selfSigned: {name: corp-issuer}}
+    storageClass: {data: fast, workspace: standard}
+password: another-filer-pw
+rootAccessKey: root
+rootSecretKey: another-root-secret
+volumeReplicas: 2
+volumeStorage: "20"
+grants:
+  - principal: spark
+    credentialsSecret: {name: creds-spark-s3, accessKeyKey: AWS_ACCESS_KEY_ID, secretKeyKey: AWS_SECRET_ACCESS_KEY}
+    actions: [read, write, list]
+    buckets: [spark-logs, lake]
+  - principal: polaris
+    credentialsSecret: {name: creds-polaris-s3, accessKeyKey: accessKey, secretKeyKey: secretKey}
+    actions: [Read, List]
+    sts: true
+buckets:
+  - {name: spark-logs, paths: [events]}
+  - {name: lake}
+  - {name: public, anonymousRead: true}

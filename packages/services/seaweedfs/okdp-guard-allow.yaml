@@ -1,0 +1,50 @@
+# Reviewed uses of forbidden patterns in the vendored charts (okdp-chart-guard.sh).
+- file: vendor/seaweedfs/templates/*/*-service.y*ml
+  pattern: capabilities
+  reason: >-
+    The whole .Capabilities is passed to the seaweedfs.trafficDistribution helper,
+    which only reads .Capabilities.KubeVersion.
+- file: vendor/seaweedfs/templates/filer/filer-statefulset.yaml
+  pattern: lookup
+  reason: Checksum of filer.s3.existingConfigSecret; the S3 gateway is standalone (filer.s3 off, no existing secret there).
+  disabledBy: filer.s3.existingConfigSecret
+- file: vendor/seaweedfs/templates/s3/s3-secret.yaml
+  pattern: lookup
+  reason: Generated S3 credentials Secret, not rendered with s3.existingConfigSecret (set to the ESO-written Secret).
+  disabledBy: s3.existingConfigSecret
+- file: vendor/seaweedfs/templates/shared/_helpers.tpl
+  pattern: lookup
+  reason: >-
+    getOrGeneratePassword, called by s3-secret.yaml (off with s3.existingConfigSecret)
+    and sftp-secret.yaml (sftp.enabled=false) only; seaweedfs.volumeResizeHookCommands,
+    which compares the live StatefulSets and PVCs only with volume.resizeHook.enabled
+    (false: resize by hand).
+  disabledBy: s3.existingConfigSecret
+- file: vendor/seaweedfs/templates/shared/_helpers.tpl
+  pattern: non-deterministic
+  reason: Random fallback of getOrGeneratePassword (see the lookup entry).
+  disabledBy: s3.existingConfigSecret
+- file: vendor/seaweedfs/templates/shared/security-configmap.yaml
+  pattern: lookup
+  reason: >-
+    security.toml with generated JWT keys, only with global.seaweedfs.enableSecurity
+    or JWT signing beyond the defaults (both kept off).
+  disabledBy: global.seaweedfs.enableSecurity=false
+- file: vendor/seaweedfs/templates/shared/security-configmap.yaml
+  pattern: non-deterministic
+  reason: Generated JWT signing keys (see the lookup entry).
+  disabledBy: global.seaweedfs.enableSecurity=false
+- file: vendor/seaweedfs/templates/sftp/sftp*-secret.yaml
+  pattern: lookup
+  reason: SFTP passwords and host keys kept across upgrades; SFTP is off (sftp.enabled=false, allInOne.enabled=false).
+  disabledBy: sftp.enabled=false
+- file: vendor/seaweedfs/templates/sftp/sftp*-secret.yaml
+  pattern: non-deterministic
+  reason: Generated SFTP host keys (genPrivateKey), see the lookup entry.
+  disabledBy: sftp.enabled=false
+- file: vendor/seaweedfs/templates/shared/networkpolicy.yaml
+  pattern: templated-hook
+  reason: >-
+    The NetworkPolicies of the bucket hook and the volume resize hook carry the hook of
+    their Job (post-install,post-upgrade / pre-install,pre-upgrade); no policy is
+    rendered with networkPolicy.enabled=false (the default, kept).

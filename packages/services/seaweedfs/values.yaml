@@ -1,0 +1,44 @@
+# Platform values (platform/platform-values.yaml). Never set per instance.
+# Reads global.okdp.ingress.{suffix,className}, certificateIssuers.selfSigned.name
+# and storageClass.workspace.
+global:
+  okdp: {}
+
+# External connections (none used by this chart).
+connections: {}
+
+# Basic auth of the filer UI. No password default: a password shipped with a chart
+# ends up in production.
+username: admin
+password: ""
+# Root (Admin) identity of the S3 gateway.
+rootAccessKey: okdpadmin
+rootSecretKey: ""
+stsRoleArn: "arn:aws:iam::000000000000:role/S3WriteRole"
+# Host names (ingress suffix appended). Default: seaweedfs-<namespace>[-api].
+consoleHost: ""
+apiHost: ""
+
+volumeReplicas: 1
+# Sizes in GiB.
+masterStorage: "1"
+masterLogStorage: "0.5"
+volumeStorage: "2"
+filerStorage: "0.5"
+filerLogStorage: "0.5"
+
+# S3 identities, one per principal; ESO reads the keys from credentialsSecret:
+#   - principal: platformAdmin
+#     credentialsSecret: {name: creds-seaweedfs-s3, accessKeyKey: accessKey, secretKeyKey: secretKey}
+#     actions: [Admin]          # Read, Write, List, Tagging, Admin
+#     buckets: []               # scope of the actions, all buckets when empty
+#     sts: false                # may assume the STS role (implies Admin)
+grants: []
+# Buckets created at startup; paths are seeded (a .keep object) for consumers that
+# need a prefix to exist (Spark's FsHistoryProvider).
+#   - {name: spark-logs, anonymousRead: false, paths: [events]}
+buckets: []
+
+# secretRef of the published s3 connection. Empty: none (consumers bring their own
+# identity through the grants).
+outputSecretRef: ""

@@ -1,5 +1,5 @@
 {
-  "packages/services/seaweedfs": "1.0.2",
+  "packages/services/seaweedfs": "1.0.0",
   "packages/system/cert-manager": "1.0.0",
   "packages/system/cnpg-postgresql": "1.0.0",
   "packages/system/coredns-patch": "1.0.0",
