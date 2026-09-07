@@ -47,11 +47,20 @@ jobs:
   publish:
     needs: [get-package-oci-prefix]
     if: github.repository_owner == 'OKDP'
-    uses: ./.github/workflows/kubocd-package-template.yml
+    permissions:
+      contents: read
+      packages: write
+    # TODO(no-kubocd): @v1 and drop tools_ref/sibling_repositories once merged.
+    uses: OKDP/gh-workflows/.github/workflows/okdp-chart-ci.yml@no-kubocd
     with:
+      tools_ref: no-kubocd
+      sibling_repositories: OKDP/okdp-lib@main
       ci_registry: "ghcr.io"
       registry: "quay.io"
       publish_to_registry: "true"
+      # A published version is never overwritten: republish what is missing only.
+      on_existing_tag: "skip"
+      all_charts: true
       oci_package_prefix: "${{ needs.get-package-oci-prefix.outputs.oci_package_prefix }}"
       runs-on: "ubuntu-latest"
     secrets: inherit

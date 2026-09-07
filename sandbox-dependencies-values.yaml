@@ -16,5 +16,6 @@
 
 # Source of truth for where sandbox-dependencies publishes its OCI artifacts.
 # Owned by this repository's CI, independent of the deployment contexts (now in okdp-sandbox).
-# CI reads packageRepository via .github/actions/oci-package-prefix.
-packageRepository: quay.io/okdp/sandbox-dependencies
+# CI reads packageRepository via .github/actions/oci-package-prefix: its last segment
+# is the okdp-chart-ci.yml oci_package_prefix (release: oci://quay.io/okdp/sandbox-charts/<chart>).
+packageRepository: quay.io/okdp/sandbox-charts

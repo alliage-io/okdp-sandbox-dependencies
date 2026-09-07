@@ -49,11 +49,11 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-      # release-please owns only the OKDP half of the tag and writes it to
-      # .release-please-manifest.json on its own branch. Join it with the
-      # upstream half already in each manifest, on that same branch, before
+      # release-please owns only the OKDP half of the chart version and writes
+      # it to .release-please-manifest.json on its own branch. Join it with the
+      # upstream half already in each Chart.yaml, on that same branch, before
       # anyone reviews the release pull request.
-      - name: Compose the OCI tags
+      - name: Compose the chart versions
         if: steps.release-please.outputs.prs_created == 'true'
         env:
           BRANCH: release-please--branches--${{ github.ref_name }}
@@ -63,7 +63,7 @@ jobs:
           bash .github/scripts/compose-oci-tag.sh
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git commit -am "chore: compose the upstream version into the OCI tags" || exit 0
+          git commit -am "chore: compose the upstream version into the chart versions" || exit 0
           git push origin "${BRANCH}"
 
   get-package-oci-prefix:
@@ -88,13 +88,16 @@ jobs:
     permissions:
       contents: read
       packages: write
-    uses: ./.github/workflows/kubocd-package-template.yml
+    # TODO(no-kubocd): @v1 and drop tools_ref/sibling_repositories once merged.
+    uses: OKDP/gh-workflows/.github/workflows/okdp-chart-ci.yml@no-kubocd
     with:
+      tools_ref: no-kubocd
+      sibling_repositories: OKDP/okdp-lib@main
       ci_registry: "ghcr.io"
       registry: "quay.io"
       publish_to_registry: "true"
       # release-please has just minted versions that have never existed, so a
-      # tag already being on the registry means something is genuinely wrong.
+      # version already being on the registry means something is genuinely wrong.
       on_existing_tag: "fail"
       package_paths: ${{ needs.release-please.outputs.paths_released }}
       oci_package_prefix: "${{ needs.get-package-oci-prefix.outputs.oci_package_prefix }}"

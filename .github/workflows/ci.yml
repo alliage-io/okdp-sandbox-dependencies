@@ -71,16 +71,21 @@ jobs:
         with:
           values_path: sandbox-dependencies-values.yaml
 
-  kubocd-packages-ci:
+  charts:
     needs: [get-package-oci-prefix]
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       contents: read
       packages: write
-    uses: ./.github/workflows/kubocd-package-template.yml
+    # TODO(no-kubocd): @v1 and drop tools_ref/sibling_repositories once gh-workflows and
+    # okdp-lib (a file:// dependency on ../okdp-lib) are released.
+    uses: OKDP/gh-workflows/.github/workflows/okdp-chart-ci.yml@no-kubocd
     with:
+      tools_ref: no-kubocd
+      sibling_repositories: OKDP/okdp-lib@main
       ci_registry: "ghcr.io"
       registry: "quay.io"
       publish_to_registry: "false"
       oci_package_prefix: "${{ needs.get-package-oci-prefix.outputs.oci_package_prefix }}"
+      # Pull requests from forks cannot write packages: validate only.
+      push: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
       runs-on: "ubuntu-latest"
