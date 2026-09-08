@@ -54,6 +54,8 @@ local/
 # no-kubocd migration; CI runs `helm dependency build`).
 Chart.lock
 **/charts/*.tgz
+# ...but vendored upstream charts are committed as pulled (vendor-charts.sh --check).
+!**/vendor/**/Chart.lock
 # okdp-chart-test.sh output
 .okdp-rendered/
 
