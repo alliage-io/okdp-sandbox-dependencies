@@ -12,18 +12,14 @@ in a connection file, with their own identity (a grant of this store) as secretR
 
 {{/*
 One s3 output named after the release. No credentials by default: each consumer
-brings its own identity (grants), so the secretRef okdp-lib would default to is
-removed, unless outputSecretRef names a Secret consumers can use.
+brings its own identity (grants); okdp-lib adds a secretRef only when one is
+given, here outputSecretRef (a Secret consumers can use), when set.
 */}}
 {{- define "okdp.instance.outputs" -}}
-{{- $out := include "okdp.contract.s3.provide" (dict "ctx" . "secretRef" .Values.outputSecretRef "values" (dict
+{{ include "okdp.contract.s3.provide" (dict "ctx" . "secretRef" .Values.outputSecretRef "values" (dict
       "apiUrl" (printf "https://%s" (include "seaweedfs.okdp.apiHost" .))
       "internalUrl" (include "seaweedfs.okdp.internalUrl" .)
       "consoleUrl" (printf "https://%s" (include "seaweedfs.okdp.consoleHost" .))
       "region" "us-east-1"
-      "pathStyle" true)) | fromYamlArray -}}
-{{- if not .Values.outputSecretRef -}}
-  {{- $_ := unset (index $out 0) "secretRef" -}}
-{{- end -}}
-{{- toYaml $out -}}
+      "pathStyle" true)) }}
 {{- end -}}
