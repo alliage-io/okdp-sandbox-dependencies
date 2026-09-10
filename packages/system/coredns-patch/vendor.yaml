@@ -6,4 +6,4 @@ charts:
     version: 0.1.0
     # Its Job answers only A queries of the suffix: templates/job.yaml of this chart
     # replaces it (every query type).
-    remove: [templates/job.yaml]
+    drop: [templates/job.yaml]

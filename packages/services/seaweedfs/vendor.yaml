@@ -7,4 +7,4 @@ charts:
     # A pre-install hook Secret with a random password (randAlphaNum), unused with
     # the default filer store (the filer reads it with optional: true); Argo CD
     # would recreate it with a new value on every sync, and no value disables it.
-    remove: [templates/shared/secret-seaweedfs-db.yaml]
+    drop: [templates/shared/secret-seaweedfs-db.yaml]

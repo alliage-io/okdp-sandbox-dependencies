@@ -15,22 +15,38 @@
 # limitations under the License.
 #
 # Unpacks the upstream charts a wrapper chart renders with okdp.vendor.render.
+# This is the canonical copy (OKDP/platform-packages): the copies in other
+# OKDP chart repositories must stay byte-identical to it.
 #
 # Each wrapper lists them in <chart>/vendor.yaml:
 #
 #   charts:
-#     - name: trino                                   # directory under vendor/
-#       repository: https://trinodb.github.io/charts  # or oci://registry/path
-#       version: 1.42.1
-#       chart: trino                                  # optional, default: name
-#       remove: [charts/ollama]                       # optional, paths dropped from the
-#                                                     # pulled chart (e.g. bundled application
-#                                                     # subcharts the wrapper keeps disabled,
-#                                                     # which okdp.vendor.render refuses)
+#     - name: trino                                   # required: directory under vendor/
+#       repository: https://trinodb.github.io/charts  # required: https://, oci://registry/path
+#                                                     #   or file://<path>
+#       version: 1.42.1                               # required: exact chart version
+#       chart: trino                                  # optional: upstream chart name,
+#                                                     #   default: name
+#       drop: [charts/postgresql]                     # optional: paths removed after unpacking
 #
-# and gets vendor/<name>/ (the pristine `helm pull --untar`, nested library
-# charts unpacked too). vendor/ is committed: the chart renders offline, the
-# published chart is self-contained, and an upgrade shows up as a diff.
+# No other key is accepted. vendor/<name>/ receives the pristine
+# `helm pull --untar`, its nested dependency archives unpacked (their partials
+# must load), minus the `drop` paths, then minus the directories left empty.
+#
+# drop: paths RELATIVE TO THE VENDORED CHART ROOT (e.g. charts/postgresql,
+# templates/secret.yaml), never absolute, never containing "..", and each must
+# exist in the pulled chart. Use it for what the wrapper never renders: a
+# bundled application subchart it disables or replaces (okdp.vendor.render
+# refuses to carry one), an upstream template it replaces.
+#
+# repository: file://<path>, relative to the wrapper chart: a chart of the same
+# repository (e.g. charts/oidc-client) copied as is; its Chart.yaml version
+# must be the listed version.
+#
+# vendor/ is committed (lock files of vendored charts included): the chart
+# renders offline, the published chart is self-contained, and an upgrade shows
+# up as a diff. Git keeps no empty directory, hence their removal, so --check
+# passes on a fresh clone.
 #
 #   scripts/vendor-charts.sh <chart dir>...          (re)vendor
 #   scripts/vendor-charts.sh --check <chart dir>...  fail if vendor/ differs from vendor.yaml
@@ -50,17 +66,39 @@ for chart in "$@"; do
   count=$(yq '.charts | length' "${manifest}")
   listed=()
   for ((i = 0; i < count; i++)); do
-    name=$(yq ".charts[${i}].name" "${manifest}")
-    repo=$(yq ".charts[${i}].repository" "${manifest}")
-    version=$(yq ".charts[${i}].version" "${manifest}")
-    upstream=$(yq ".charts[${i}].chart // .charts[${i}].name" "${manifest}")
+    name=$(yq ".charts[${i}].name // \"\"" "${manifest}")
     listed+=("${name}")
+    unknown=$(yq ".charts[${i}] | keys | .[] | select(. != \"name\" and . != \"repository\" and . != \"version\" and . != \"chart\" and . != \"drop\")" "${manifest}")
+    if [[ -n "${unknown}" ]]; then
+      echo "FAIL ${manifest}: charts[${i}]: unknown key(s) $(echo ${unknown}) (allowed: name, repository, version, chart, drop)"
+      rc=1; continue
+    fi
+    repo=$(yq ".charts[${i}].repository // \"\"" "${manifest}")
+    version=$(yq ".charts[${i}].version // \"\"" "${manifest}")
+    upstream=$(yq ".charts[${i}].chart // .charts[${i}].name" "${manifest}")
+    if [[ -z "${name}" || -z "${repo}" || -z "${version}" ]]; then
+      echo "FAIL ${manifest}: charts[${i}]: name, repository and version are required"
+      rc=1; continue
+    fi
     dest="${work}/$(basename "${chart}")/${name}"
     mkdir -p "${dest}"
-    if [[ "${repo}" == oci://* ]]; then
-      helm pull "${repo%/}/${upstream}" --version "${version}" --untar --untardir "${dest}" >/dev/null 2>&1
+    if [[ "${repo}" == file://* ]]; then
+      src="${chart}/${repo#file://}"
+      got=$(yq '.version' "${src}/Chart.yaml")
+      if [[ "${got}" != "${version}" ]]; then
+        echo "FAIL ${src} is version ${got}, ${manifest} lists ${version}"
+        rc=1
+        continue
+      fi
+      cp -r "${src}" "${dest}/${upstream}"
+    elif [[ "${repo}" == oci://* ]]; then
+      pull=(helm pull "${repo%/}/${upstream}" --version "${version}" --untar --untardir "${dest}")
     else
-      helm pull "${upstream}" --repo "${repo}" --version "${version}" --untar --untardir "${dest}" >/dev/null 2>&1
+      pull=(helm pull "${upstream}" --repo "${repo}" --version "${version}" --untar --untardir "${dest}")
+    fi
+    if [[ "${repo}" != file://* ]] && ! err=$("${pull[@]}" 2>&1 >/dev/null); then
+      echo "FAIL ${manifest}: cannot pull ${upstream} ${version} from ${repo}: ${err}"
+      rc=1; continue
     fi
     pulled="${dest}/${upstream}"
     # Nested dependencies ship as archives: unpack them so their partials load.
@@ -70,15 +108,21 @@ for chart in "$@"; do
         tar -xzf "${tgz}" -C "${pulled}/charts" && rm -f "${tgz}"
       done
     fi
-    # Paths the wrapper drops from the pristine chart (vendor.yaml `remove`).
-    while IFS= read -r rel; do
-      [[ -n "${rel}" ]] || continue
-      if [[ "${rel}" == /* || "${rel}" == *..* ]]; then
-        echo "${manifest}: charts[${i}].remove: '${rel}' must be a relative path inside the chart" >&2; rc=1; continue
+    # Paths the wrapper never renders (vendor.yaml `drop`, relative to the chart root).
+    bad=false
+    while IFS= read -r drop; do
+      [[ -n "${drop}" ]] || continue
+      if [[ "${drop}" == /* || "${drop}" == *..* ]]; then
+        echo "FAIL ${manifest}: charts[${i}].drop: '${drop}' must be a path relative to the chart root, without '..'"
+        bad=true; continue
       fi
-      [[ -e "${pulled}/${rel}" ]] || { echo "${manifest}: charts[${i}].remove: '${rel}' not found in ${upstream} ${version}" >&2; rc=1; continue; }
-      rm -rf "${pulled:?}/${rel}"
-    done < <(yq ".charts[${i}].remove // [] | .[]" "${manifest}")
+      if [[ ! -e "${pulled}/${drop}" ]]; then
+        echo "FAIL ${manifest}: charts[${i}].drop: '${drop}' not found in ${upstream} ${version} (paths are relative to the chart root, e.g. charts/<subchart>)"
+        bad=true; continue
+      fi
+      rm -rf "${pulled:?}/${drop}"
+    done < <(yq ".charts[${i}].drop // [] | .[]" "${manifest}")
+    if ${bad}; then rc=1; continue; fi
     # Git keeps no empty directory: drop them so --check matches a clone.
     find "${pulled}" -mindepth 1 -type d -empty -delete
     target="${chart}/vendor/${name}"
