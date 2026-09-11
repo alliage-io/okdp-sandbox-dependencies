@@ -18,6 +18,6 @@ annotations:
   okdp.io/depends-on: "ingress,external-secrets"
 dependencies:
   - name: okdp-lib
-    version: 0.1.0
+    version: ">=0.1.0 <1.0.0"
     # TODO(no-kubocd): switch to oci://quay.io/okdp/platform-charts
     repository: file://../../../../okdp-lib
