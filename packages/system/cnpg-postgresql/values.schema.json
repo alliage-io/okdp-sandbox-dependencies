@@ -50,7 +50,7 @@
               "passwordSecret": {
                 "type": "string",
                 "title": "Credentials Secret",
-                "description": "Secret in this namespace with the keys username and password (created by someone else, e.g. local-secrets-provider). Also the secretRef of the published connection."
+                "description": "Secret in this namespace with the keys username and password (created by someone else, e.g. local-secrets-provider), labelled cnpg.io/reload: \"true\" so the role gets its password even when the Secret appears after the cluster. Also the secretRef of the published connection."
               }
             }
           },

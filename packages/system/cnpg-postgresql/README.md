@@ -23,6 +23,16 @@ nothing under Argo CD, and no value disables it. A missing Secret now shows in t
 `password`, created by someone else (`local-secrets-provider` in the sandbox, replicated to
 every namespace).
 
+**Label the owner Secrets `cnpg.io/reload: "true"`.** CloudNativePG reconciles a managed
+role when the `Cluster` changes, and when a Secret it uses changes only if that Secret
+carries this label. A Secret that appears after the role was reconciled (a replicated
+Secret in a new namespace arrives some time after the chart) otherwise leaves the role
+without a password for good (`passwordStatus` of the role without `resourceVersion`), and
+every client fails with `password authentication failed`. With the label, CloudNativePG
+sets the password as soon as the Secret appears, and again when it changes. In the
+sandbox, `local-secrets-provider` sets it per Secret (`labels`), and
+kubernetes-replicator copies the labels to the replicas.
+
 ## Provided connections: `database-server`, external only
 
 For each database, an output named `<release>-<database>` (`_` becomes `-`):

@@ -11,7 +11,8 @@ connections: {}
 #     owner: {username: keycloak, passwordSecret: creds-keycloak-db}
 #     schemas: []
 # owner.passwordSecret: a Secret of this namespace with the keys username and
-# password, created by someone else (local-secrets-provider in the sandbox).
+# password, created by someone else (local-secrets-provider in the sandbox),
+# labelled cnpg.io/reload: "true" (see the README).
 databases: []
 # PostgreSQL instances (1 primary + standbys).
 instances: 1
