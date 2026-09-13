@@ -47,6 +47,14 @@
               ],
               "minLength": 1
             }
+          },
+          "labels": {
+            "type": "object",
+            "title": "Labels",
+            "description": "Extra labels of the Secret, copied to its replicas. Database owner Secrets read by CloudNativePG managed roles need cnpg.io/reload: \"true\" (otherwise a role created before its Secret is replicated keeps no password).",
+            "additionalProperties": {
+              "type": "string"
+            }
           }
         }
       }

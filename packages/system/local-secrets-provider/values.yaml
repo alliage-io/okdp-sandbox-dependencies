@@ -8,5 +8,6 @@ connections: {}
 # Secrets to provision, each replicated to every namespace:
 #   - name: creds-keycloak-db
 #     data: {username: keycloak, password: keycloak123}
+#     labels: {cnpg.io/reload: "true"}   # optional; copied to the replicas
 # Values cannot be empty: nothing generates them (use ESO for generated passwords).
 secrets: []

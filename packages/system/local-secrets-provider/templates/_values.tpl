@@ -17,3 +17,44 @@ secrets:
   - {{ toYaml $entry | nindent 4 | trim }}
 {{- end }}
 {{- end -}}
+
+{{/*
+Extra labels per Secret name, from the entries' `labels` (the upstream chart has
+no such field: every key but name/description is Secret data). Entries sharing a
+name merge, as the upstream chart merges their data.
+*/}}
+{{- define "local-secrets-provider.extraLabels" -}}
+{{- $byName := dict }}
+{{- range $s := .Values.secrets }}
+{{- with $s.labels }}
+{{- $_ := set $byName $s.name (mergeOverwrite (get $byName $s.name | default dict) (deepCopy .)) }}
+{{- end }}
+{{- end }}
+{{- with $byName }}{{ toYaml . }}{{ end }}
+{{- end -}}
+
+{{/*
+Adds the extra labels to the Secrets of the rendered stream (e.g.
+cnpg.io/reload: "true", so that CloudNativePG reconciles a managed role when its
+password Secret appears or changes; kubernetes-replicator copies the labels to
+the replicas). Documents without extra labels are passed through untouched; the
+others are re-serialised (same content, keys sorted).
+*/}}
+{{- define "local-secrets-provider.addLabels" -}}
+{{- $labels := .labels }}
+{{- range $doc := regexSplit "(?m)^---[ \\t]*$" .rendered -1 }}
+{{- $obj := fromYaml $doc }}
+{{- $extra := dict }}
+{{- if and $obj (not (hasKey $obj "Error")) (eq (toString $obj.kind) "Secret") (kindIs "map" $obj.metadata) }}
+{{- $extra = get $labels (toString $obj.metadata.name) | default dict }}
+{{- end }}
+{{- if $extra }}
+{{- $_ := set $obj.metadata "labels" (mergeOverwrite ($obj.metadata.labels | default dict) $extra) }}
+---
+{{ regexFind "# Source: [^\\n]*" $doc }}
+{{ toYaml $obj }}
+{{- else }}
+{{ print "\n---" $doc }}
+{{- end }}
+{{- end }}
+{{- end -}}

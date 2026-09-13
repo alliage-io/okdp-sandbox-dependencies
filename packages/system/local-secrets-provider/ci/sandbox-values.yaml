@@ -3,6 +3,8 @@ global:
     ingress: {suffix: okdp.sandbox, className: nginx}
 secrets:
   - name: creds-keycloak-db
+    labels:
+      cnpg.io/reload: "true"
     data:
       username: keycloak
       password: keycloak123
