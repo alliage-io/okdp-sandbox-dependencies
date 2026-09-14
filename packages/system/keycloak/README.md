@@ -30,6 +30,7 @@ Keycloak 26).
 | `anonymousDCR` | off | `enabled`, `trustedHosts` (default `*.${suffix}`, `*.svc.cluster.local`), `allowedScopes` (default `groups`), `checkSenderHost` (default `false`), `consentRequired` (default `false`), `fullScopeAllowed` (default `true`), see below. Off, the trusted-hosts policy trusts no host. |
 | `users` | `[]` | `{username, email, firstName, lastName, password, serviceAccountClientId, roles, clientRoles, groups}`; `roles` are realm roles, `clientRoles` maps a client id to its roles. |
 | `groups`, `roles`, `clients`, `clientScopes` | `[]` | Realm content, same shape as the KuboCD package. |
+| `clients[].attributes` | none | Keycloak client attributes (string values), e.g. `oauth2.device.authorization.grant.enabled: "true"` lets a public client use the device flow of a command-line tool. |
 
 In `clients[].redirectUris`, `clients[].webOrigins` and `anonymousDCR.trustedHosts`,
 `${suffix}` is replaced by `global.okdp.ingress.suffix` (the KuboCD form

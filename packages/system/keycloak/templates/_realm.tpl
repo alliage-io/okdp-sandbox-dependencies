@@ -52,6 +52,7 @@ values need no JSON escaping.
   {{- with $c.defaultClientScopes }}{{ $_ := set $client "defaultClientScopes" . }}{{ end -}}
   {{- with $c.optionalClientScopes }}{{ $_ := set $client "optionalClientScopes" . }}{{ end -}}
   {{- if $c.serviceAccountsEnabled }}{{ $_ := set $client "serviceAccountsEnabled" true }}{{ end -}}
+  {{- with $c.attributes }}{{ $_ := set $client "attributes" . }}{{ end -}}
   {{- range $k := list "standardFlowEnabled" "implicitFlowEnabled" "directAccessGrantsEnabled" -}}
     {{- if hasKey $c $k }}{{ $_ := set $client $k (index $c $k) }}{{ end -}}
   {{- end -}}

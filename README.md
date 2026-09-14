@@ -132,6 +132,3 @@ Contributions follow the [OKDP contribution guide](https://github.com/OKDP/.gith
 <a href="https://okdp.io">
   <img src="https://okdp.io/logos/okdp-notext.svg" height="20px" style="margin: 0 2px;" />
 </a>
-
-│   ├── kubauth/
-| [`kubauth`](./packages/system/kubauth) | `0.3.0-snapshot-p01` | Kubernetes-native OIDC provider, where users, groups and OIDC clients are custom resources |

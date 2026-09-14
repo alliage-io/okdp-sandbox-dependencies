@@ -53,13 +53,6 @@
       "tag-separator": "/",
       "changelog-path": "CHANGELOG.md"
     },
-    "packages/system/kubauth": {
-      "component": "kubauth",
-      "release-type": "simple",
-      "include-component-in-tag": true,
-      "tag-separator": "/",
-      "changelog-path": "CHANGELOG.md"
-    },
     "packages/system/local-secrets-provider": {
       "component": "local-secrets-provider",
       "release-type": "simple",

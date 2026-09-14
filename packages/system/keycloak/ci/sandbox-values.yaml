@@ -38,10 +38,14 @@ clients:
   - clientId: okdp-ui
     name: okdp-ui
     publicClient: true
-    redirectUris: ["https://okdp-ui.${suffix}", "https://okdp-ui.${suffix}/*"]
+    # The okdp CLI logs in as the console client: loopback redirect (browser
+    # flow) and device authorization grant.
+    redirectUris: ["https://okdp-ui.${suffix}", "https://okdp-ui.${suffix}/*", "http://127.0.0.1/*"]
     webOrigins: ["https://okdp-ui.{{ .Context.ingress.suffix }}"]
     defaultClientScopes: [web-origins, acr, roles, profile, groups, basic, email]
     optionalClientScopes: [offline_access]
+    attributes:
+      oauth2.device.authorization.grant.enabled: "true"
   - clientId: svc-polaris-api-admin
     name: svc-polaris-api-admin
     secret: myPolarisAdminSecret

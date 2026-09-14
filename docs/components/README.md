@@ -24,7 +24,6 @@ the upstream chart is used directly.
 | `20-cnpg-postgresql` | `cnpg-system` | `cnpg-postgresql` | `18.3.0-1.0.0` | cnpg operator, `creds-keycloak-db` (10) |
 | `20-keycloak` | `keycloak` | `keycloak` | `7.3.2-1.0.0` | issuer, ingress, the database (same layer: Keycloak restarts until it answers) |
 | `20-storage` (optional) | `default` | `seaweedfs` | `4.47.0-1.0.0` | ESO, Reloader, issuer, ingress, `creds-seaweedfs-s3` (10) |
-| `20-kubauth` (optional) | `kubauth` | `kubauth` | `0.3.0-snapshot-1.0.1` | cert-manager, ingress |
 | `20-vault` (optional) | `vault` | `vault` | `0.34.1-1.0.0` | issuer, ingress admission webhook |
 
 `kubocd-webhooks` has no successor (KuboCD goes away).
@@ -35,8 +34,9 @@ ingress-nginx is retired upstream, 4.15.1 being its final release.
 
 Platform values these components read (`platform/platform-values.yaml`):
 `ingress.suffix`, `ingress.className`, `certificateIssuers.selfSigned.name`,
-`storageClass.data` (cnpg-postgresql), `storageClass.workspace` (seaweedfs),
-`oidc.kubauth.namespace` (kubauth, when `oidc.clientProvisioning` is `kubauth`).
+`storageClass.data` (cnpg-postgresql), `storageClass.workspace` (seaweedfs).
+Identity is Keycloak only (`20-keycloak`): `oidc.clientProvisioning` is `existing` or
+`dcr` (Keycloak's `anonymousDCR` registration policy).
 
 ## Connections between components
 
@@ -56,7 +56,7 @@ values layer whose `secretRef` names a Secret of the consumer's namespace:
 
 ## Argo CD note
 
-cert-manager's cainjector, ingress-nginx's certgen hook, trust-manager and kubauth write
+cert-manager's cainjector, ingress-nginx's certgen hook and trust-manager write
 `caBundle` into their webhook configurations after the apply: the components
 ApplicationSet should ignore `/webhooks/*/clientConfig/caBundle` on
 `MutatingWebhookConfiguration` and `ValidatingWebhookConfiguration` (and

@@ -384,6 +384,13 @@
           },
           "directAccessGrantsEnabled": {
             "type": "boolean"
+          },
+          "attributes": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Keycloak client attributes, e.g. oauth2.device.authorization.grant.enabled: \"true\" for the device flow of a CLI."
           }
         }
       },
