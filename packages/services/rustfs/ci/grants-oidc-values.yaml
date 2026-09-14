@@ -1,0 +1,39 @@
+# The sandbox store: buckets, one grant per consuming service, OIDC with a
+# pre-provisioned client and one policy per realm role, a root key set by hand.
+global:
+  okdp:
+    ingress: {suffix: okdp.sandbox, className: nginx}
+    oidc:
+      enabled: true
+      issuerUri: https://keycloak.okdp.sandbox/realms/master
+      displayName: keycloak
+      scope: "openid profile email groups"
+      clientProvisioning: existing
+    certificateIssuers: {selfSigned: {name: default-issuer}}
+    storageClass: {data: standard, workspace: standard}
+rootAccessKey: okdpadmin
+rootSecretKey: sandbox-rustfs-root
+dataStorage: 20Gi
+memoryGi: 4
+cpu: 0.5
+buckets:
+  - {name: hive, anonymousRead: true}
+  - {name: spark-events, anonymousRead: true, paths: [event-logs]}
+  - {name: bronze}
+grants:
+  - principal: platformAdmin
+    credentialsSecret: {name: creds-storage-s3, accessKeyKey: accessKey, secretKeyKey: secretKey}
+    actions: [Admin]
+  - principal: hiveMetastore
+    credentialsSecret: {name: creds-hive-metastore-s3, accessKeyKey: accessKey, secretKeyKey: secretKey}
+    actions: [Read, Write, List]
+    buckets: [hive, bronze]
+  - principal: polaris
+    credentialsSecret: {name: creds-polaris-s3, accessKeyKey: accessKey, secretKeyKey: secretKey}
+    actions: [Read, Write, List]
+    sts: true
+oidcPolicyClaim: policy
+oidcPolicies:
+  - {name: platform_admin, actions: [admin]}
+  - {name: data_engineer, actions: [read, list, write], buckets: [bronze]}
+  - {name: auditor, actions: [read, list]}

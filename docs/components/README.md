@@ -24,6 +24,7 @@ the upstream chart is used directly.
 | `20-cnpg-postgresql` | `cnpg-system` | `cnpg-postgresql` | `18.3.0-1.0.0` | cnpg operator, `creds-keycloak-db` (10) |
 | `20-keycloak` | `keycloak` | `keycloak` | `7.3.2-1.0.0` | issuer, ingress, the database (same layer: Keycloak restarts until it answers) |
 | `20-storage` (optional) | `default` | `seaweedfs` | `4.47.0-1.0.0` | ESO, Reloader, issuer, ingress, `creds-seaweedfs-s3` (10) |
+| `20-storage` (optional, instead of seaweedfs) | `default` | `rustfs` | `1.0.0-1.0.0` | ESO, issuer, ingress, `creds-seaweedfs-s3` (10); values: `packages/services/rustfs/ci/sandbox-values.yaml` |
 | `20-vault` (optional) | `vault` | `vault` | `0.34.1-1.0.0` | issuer, ingress admission webhook |
 
 `kubocd-webhooks` has no successor (KuboCD goes away).

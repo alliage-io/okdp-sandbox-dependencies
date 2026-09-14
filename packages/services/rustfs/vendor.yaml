@@ -1,0 +1,9 @@
+# Upstream charts rendered by okdp.vendor.render (the former KuboCD modules).
+# Refresh vendor/ with: scripts/vendor-charts.sh packages/services/rustfs
+charts:
+  - name: rustfs              # module main
+    repository: https://charts.rustfs.com
+    version: 1.0.0
+  - name: oidc-dcr            # module oidc-dcr (global.okdp.oidc.clientProvisioning: dcr)
+    repository: oci://quay.io/adaltas
+    version: 0.3.3

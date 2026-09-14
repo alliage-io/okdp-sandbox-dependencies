@@ -1,0 +1,32 @@
+{{- /* S3 API (endpoint port 9000) and console (port 9001) ingresses. */}}
+{{- $svc := include "okdp-rustfs.service" . }}
+{{- range $i := list (dict "name" "s3" "host" (include "okdp-rustfs.s3Host" .) "port" "endpoint") (dict "name" "console" "host" (include "okdp-rustfs.consoleHost" .) "port" "console") }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "okdp.fullname" (dict "ctx" $ "suffix" $i.name) }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "okdp.labels" (dict "ctx" $ "component" $i.name) | nindent 4 }}
+  annotations:
+    {{- include "okdp.ingressAnnotations" $ | nindent 4 }}
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+spec:
+  ingressClassName: {{ $.Values.global.okdp.ingress.className }}
+  rules:
+    - host: {{ $i.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $svc }}
+                port:
+                  name: {{ $i.port }}
+  tls:
+    - hosts:
+        - {{ $i.host }}
+      secretName: {{ include "okdp.fullname" (dict "ctx" $ "suffix" (printf "%s-tls" $i.name)) }}
+{{- end }}

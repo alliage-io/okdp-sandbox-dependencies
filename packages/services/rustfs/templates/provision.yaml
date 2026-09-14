@@ -1,0 +1,187 @@
+{{- /*
+Provisioning: buckets, the S3 identities of the grants and their policies, the
+identity of the s3 output (credentials Secret) and the policies named after the
+OIDC claim values. A post-install/post-upgrade hook (Argo: PostSync): the
+server it polls is a regular resource applied first, and the Job re-runs on
+every sync, so a changed input (rotated keys, new grants, edited policies) is
+always applied. Every call is idempotent: an existing bucket is kept, a user or
+a policy is overwritten.
+
+It runs the store's own image: curl signs the requests (SigV4) with the root
+identity, the S3 API creates the buckets and the RustFS admin API
+(/rustfs/admin/v3, plain JSON) the users and policies. Replaces the MinIO
+client (quay.io/minio/mc, archived).
+*/}}
+{{- $name := include "okdp.fullname" (dict "ctx" . "suffix" "provision") }}
+{{- $endpoint := printf "http://%s.%s:9000" (include "okdp-rustfs.service" .) .Release.Namespace }}
+{{- $rootSecret := include "okdp-rustfs.rootSecret" . }}
+{{- $credentials := include "okdp-rustfs.credentialsSecret" . }}
+{{- $labels := include "okdp.labels" (dict "ctx" . "component" "provision") }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- $labels | nindent 4 }}
+data:
+  {{- /* one IAM policy file per non-admin grant */}}
+  {{- range $i, $g := .Values.grants }}
+  {{- $verbs := include "okdp-rustfs.verbs" $g | fromYamlArray }}
+  {{- if not (or $g.sts (has "admin" $verbs)) }}
+  policy-grant-{{ $i }}.json: |
+    {{ dict "Version" "2012-10-17" "Statement" (include "okdp-rustfs.statements" (dict "verbs" $verbs "buckets" $g.buckets) | fromYamlArray) | toJson }}
+  {{- end }}
+  {{- end }}
+  {{- /* the identity of the s3 output (generated): read, list, write on every bucket */}}
+  {{- if not .Values.outputSecretRef }}
+  policy-s3-credentials.json: |
+    {{ dict "Version" "2012-10-17" "Statement" (include "okdp-rustfs.statements" (dict "verbs" (list "read" "list" "write")) | fromYamlArray) | toJson }}
+  {{- end }}
+  {{- /* one policy file per OIDC policy, named after the claim value */}}
+  {{- range $p := .Values.oidcPolicies }}
+  {{- $verbs := include "okdp-rustfs.verbs" $p | fromYamlArray }}
+  oidc-policy-{{ $p.name }}.json: |
+    {{ dict "Version" "2012-10-17" "Statement" (include "okdp-rustfs.statements" (dict "verbs" $verbs "buckets" $p.buckets "admin" (has "admin" $verbs)) | fromYamlArray) | toJson }}
+  {{- end }}
+  {{- /* anonymous download of a bucket (mc anonymous set download) */}}
+  {{- range $b := .Values.buckets }}
+  {{- if $b.anonymousRead }}
+  bucket-{{ $b.name }}.json: |
+    {{ dict "Version" "2012-10-17" "Statement" (list
+         (dict "Effect" "Allow" "Principal" (dict "AWS" (list "*")) "Action" (list "s3:GetBucketLocation") "Resource" (list (printf "arn:aws:s3:::%s" $b.name)))
+         (dict "Effect" "Allow" "Principal" (dict "AWS" (list "*")) "Action" (list "s3:GetObject") "Resource" (list (printf "arn:aws:s3:::%s/*" $b.name)))) | toJson }}
+  {{- end }}
+  {{- end }}
+  provision.sh: |
+    #!/bin/sh
+    set -eu
+    endpoint={{ $endpoint | quote }}
+    # call <method> <path> [curl args]: a request signed with the root identity;
+    # fails with the server's answer on an HTTP error.
+    call() {
+      method=$1; path=$2; shift 2
+      out=$(curl -sS --fail-with-body --aws-sigv4 "aws:amz:us-east-1:s3" --user "${ROOT_AK}:${ROOT_SK}" \
+        -X "${method}" "$@" "${endpoint}${path}") || { echo "!! ${method} ${path}: ${out}" >&2; return 1; }
+    }
+    json_string() { printf '"%s"' "$(printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g')"; }
+    # add_user <access key> <secret key> <policy>: creates or updates the user, sets its policy.
+    add_user() {
+      call PUT /rustfs/admin/v3/add-user --url-query "accessKey=$1" \
+        --data-binary "{\"secretKey\":$(json_string "$2"),\"status\":\"enabled\"}"
+      call PUT /rustfs/admin/v3/set-user-or-group-policy \
+        --url-query "policyName=$3" --url-query "userOrGroup=$1" --url-query "isGroup=false"
+    }
+    add_policy() { call PUT /rustfs/admin/v3/add-canned-policy --url-query "name=$1" --data-binary "@$2"; }
+
+    echo ">> waiting for RustFS at ${endpoint} ..."
+    deadline=$(( $(date +%s) + 300 ))
+    until call GET / 2>/dev/null; do
+      if [ "$(date +%s)" -ge "${deadline}" ]; then
+        call GET /
+        exit 1
+      fi
+      sleep 3
+    done
+    {{- if .Values.buckets }}
+    echo ">> creating buckets"
+    {{- range $b := .Values.buckets }}
+    call PUT /{{ $b.name }}
+    {{- if $b.anonymousRead }}
+    call PUT /{{ $b.name }} --url-query policy= --data-binary @/policies/bucket-{{ $b.name }}.json
+    {{- end }}
+    {{- /* S3 has no directories: consumers that require a prefix to exist before
+           they write to it (e.g. Spark's FsHistoryProvider) need an empty marker. */}}
+    {{- range $p := ($b.paths | default list) }}
+    call PUT /{{ $b.name }}/{{ trimAll "/" $p }}/.keep --data-binary ''
+    {{- end }}
+    {{- end }}
+    {{- end }}
+    {{- if .Values.grants }}
+    echo ">> creating users and policies from grants"
+    {{- range $i, $g := .Values.grants }}
+    {{- $verbs := include "okdp-rustfs.verbs" $g | fromYamlArray }}
+    {{- if or $g.sts (has "admin" $verbs) }}
+    echo "   {{ $g.principal }} (admin/sts: consoleAdmin)"
+    add_user "$G{{ $i }}_AK" "$G{{ $i }}_SK" consoleAdmin
+    {{- else }}
+    echo "   {{ $g.principal }} (okdp-{{ $g.principal }})"
+    add_policy okdp-{{ $g.principal }} /policies/policy-grant-{{ $i }}.json
+    add_user "$G{{ $i }}_AK" "$G{{ $i }}_SK" okdp-{{ $g.principal }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+    {{- if not .Values.outputSecretRef }}
+    echo ">> creating the identity of the s3 output ({{ $credentials }})"
+    add_policy okdp-s3-credentials /policies/policy-s3-credentials.json
+    add_user "$OUT_AK" "$OUT_SK" okdp-s3-credentials
+    {{- end }}
+    {{- if .Values.oidcPolicies }}
+    echo ">> creating OIDC policies (claim values map onto these names)"
+    {{- range $p := .Values.oidcPolicies }}
+    add_policy {{ $p.name }} /policies/oidc-policy-{{ $p.name }}.json
+    {{- end }}
+    {{- end }}
+    echo ">> provisioning complete"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- $labels | nindent 4 }}
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: 20
+  template:
+    metadata:
+      labels:
+        {{- $labels | nindent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: provision
+          image: {{ printf "rustfs/rustfs:%s" (include "okdp-rustfs.imageTag" .) | quote }}
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "/scripts/provision.sh"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: [ALL]
+          env:
+            - name: ROOT_AK
+              valueFrom: {secretKeyRef: {name: {{ $rootSecret }}, key: RUSTFS_ACCESS_KEY}}
+            - name: ROOT_SK
+              valueFrom: {secretKeyRef: {name: {{ $rootSecret }}, key: RUSTFS_SECRET_KEY}}
+            {{- if not .Values.outputSecretRef }}
+            - name: OUT_AK
+              valueFrom: {secretKeyRef: {name: {{ $credentials }}, key: accessKey}}
+            - name: OUT_SK
+              valueFrom: {secretKeyRef: {name: {{ $credentials }}, key: secretKey}}
+            {{- end }}
+            {{- range $i, $g := .Values.grants }}
+            - name: G{{ $i }}_AK
+              valueFrom: {secretKeyRef: {name: {{ $g.credentialsSecret.name }}, key: {{ $g.credentialsSecret.accessKeyKey | default "accessKey" }}}}
+            - name: G{{ $i }}_SK
+              valueFrom: {secretKeyRef: {name: {{ $g.credentialsSecret.name }}, key: {{ $g.credentialsSecret.secretKeyKey | default "secretKey" }}}}
+            {{- end }}
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+            - name: policies
+              mountPath: /policies
+      volumes:
+        - name: scripts
+          configMap:
+            name: {{ $name }}
+            items:
+              - key: provision.sh
+                path: provision.sh
+        - name: policies
+          configMap:
+            name: {{ $name }}

@@ -1,0 +1,305 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "rustfs",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "global": {
+      "type": "object",
+      "description": "Platform values, from platform/platform-values.yaml (global.okdp)."
+    },
+    "connections": {
+      "type": "object",
+      "description": "External connections, one values layer per projects/<project>/connections/<name>.yaml.",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "contract"
+        ],
+        "properties": {
+          "contract": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "secretRef": {
+            "type": "object",
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "okdp-lib": {
+      "type": "object",
+      "description": "Values slot Helm creates for the okdp-lib library dependency. Not a parameter."
+    },
+    "rootAccessKey": {
+      "type": "string",
+      "title": "Root access key",
+      "default": "okdpadmin",
+      "minLength": 3,
+      "maxLength": 20,
+      "description": "Access key of the root (admin) identity.",
+      "x-ui-group": "Admin",
+      "x-ui-order": 1,
+      "x-ui-columns": 2
+    },
+    "rootSecretKey": {
+      "type": "string",
+      "title": "Root secret key",
+      "default": "",
+      "maxLength": 40,
+      "pattern": "^(.{8,40})?$",
+      "description": "Secret key of the root identity, 8 to 40 characters. Leave empty to have it generated in the cluster (Secret <release>-root, key RUSTFS_SECRET_KEY): a value set here is stored in Git.",
+      "x-ui-group": "Admin",
+      "x-ui-order": 2,
+      "x-ui-columns": 2,
+      "x-ui-widget": "password"
+    },
+    "consoleHost": {
+      "type": "string",
+      "default": "",
+      "title": "Console host",
+      "pattern": "^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$|^$",
+      "description": "Host name of the console, the ingress suffix is appended. Default: <instance>-<namespace>, the instance being the release name without its <namespace>- prefix.",
+      "x-ui-group": "Admin",
+      "x-ui-order": 3,
+      "x-ui-columns": 2,
+      "x-ui-advanced": true
+    },
+    "apiHost": {
+      "type": "string",
+      "default": "",
+      "title": "S3 API host",
+      "pattern": "^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$|^$",
+      "description": "Host name of the S3 API, the ingress suffix is appended. Default: <instance>-<namespace>-api.",
+      "x-ui-group": "Admin",
+      "x-ui-order": 4,
+      "x-ui-columns": 2,
+      "x-ui-advanced": true
+    },
+    "dataStorage": {
+      "type": "string",
+      "title": "Data size",
+      "default": "5Gi",
+      "pattern": "^[0-9]+(\\.[0-9]+)?(Ki|Mi|Gi|Ti)$",
+      "description": "Size of the data volume.",
+      "x-ui-group": "Storage",
+      "x-ui-order": 1,
+      "x-ui-columns": 2
+    },
+    "caBundleSecret": {
+      "type": "string",
+      "title": "CA bundle Secret",
+      "default": "certs-bundle",
+      "minLength": 1,
+      "description": "Secret holding ca.crt, trusted by the server when it calls the OIDC issuer.",
+      "x-ui-group": "Storage",
+      "x-ui-order": 3,
+      "x-ui-advanced": true
+    },
+    "memoryGi": {
+      "type": "number",
+      "title": "Memory limit (GiB)",
+      "default": 2,
+      "multipleOf": 0.25,
+      "exclusiveMinimum": 0,
+      "description": "Memory limit of the server container. The upstream chart ships with no cap at all by default.",
+      "x-ui-group": "Storage",
+      "x-ui-order": 4,
+      "x-ui-columns": 2,
+      "x-ui-advanced": true
+    },
+    "cpu": {
+      "type": "number",
+      "title": "CPU request (vCPU)",
+      "default": 0.25,
+      "multipleOf": 0.25,
+      "exclusiveMinimum": 0,
+      "description": "CPU request for the server container. The limit is set to twice this value.",
+      "x-ui-group": "Storage",
+      "x-ui-order": 5,
+      "x-ui-columns": 2,
+      "x-ui-advanced": true
+    },
+    "grants": {
+      "type": "array",
+      "title": "Grants",
+      "default": [],
+      "description": "S3 identities of the store, one entry per principal. actions are neutral verbs scoped to buckets; sts marks a principal that needs full admin rights.",
+      "x-ui-group": "Access",
+      "x-ui-order": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "principal",
+          "credentialsSecret"
+        ],
+        "properties": {
+          "principal": {
+            "type": "string",
+            "title": "Principal",
+            "pattern": "^[A-Za-z0-9_]+$",
+            "description": "Principal name (letters, digits, underscore): names its policy okdp-<principal> and its environment variables."
+          },
+          "credentialsSecret": {
+            "type": "object",
+            "title": "Credentials Secret",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "accessKeyKey",
+              "secretKeyKey"
+            ],
+            "description": "Secret of the namespace holding the identity's keys.",
+            "properties": {
+              "name": {
+                "type": "string",
+                "title": "Name"
+              },
+              "accessKeyKey": {
+                "type": "string",
+                "title": "Access key key"
+              },
+              "secretKeyKey": {
+                "type": "string",
+                "title": "Secret key key"
+              }
+            }
+          },
+          "actions": {
+            "type": "array",
+            "title": "Actions",
+            "description": "Neutral verbs: read, list, write, admin (case-insensitive).",
+            "items": {
+              "type": "string"
+            }
+          },
+          "buckets": {
+            "type": "array",
+            "title": "Buckets",
+            "description": "Buckets the actions apply to. Empty: every bucket.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sts": {
+            "type": "boolean",
+            "title": "STS / admin",
+            "default": false,
+            "description": "Full admin rights (consoleAdmin)."
+          }
+        }
+      }
+    },
+    "buckets": {
+      "type": "array",
+      "title": "Buckets",
+      "default": [],
+      "description": "Buckets created at startup. paths seeds prefixes inside the bucket for consumers that require them to exist beforehand.",
+      "x-ui-group": "Access",
+      "x-ui-order": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "pattern": "^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$"
+          },
+          "anonymousRead": {
+            "type": "boolean",
+            "title": "Anonymous read",
+            "default": false
+          },
+          "paths": {
+            "type": "array",
+            "title": "Paths",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "oidcPolicies": {
+      "type": "array",
+      "title": "OIDC policies",
+      "default": [],
+      "description": "Policies named after the values of the OIDC policy claim.",
+      "x-ui-group": "Access",
+      "x-ui-order": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "A value of the policy claim."
+          },
+          "actions": {
+            "type": "array",
+            "title": "Actions",
+            "description": "Neutral verbs: read, list, write, admin (case-insensitive).",
+            "items": {
+              "type": "string"
+            }
+          },
+          "buckets": {
+            "type": "array",
+            "title": "Buckets",
+            "description": "Buckets the actions apply to. Empty: every bucket.",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "oidcPolicyClaim": {
+      "type": "string",
+      "title": "OIDC policy claim",
+      "default": "groups",
+      "minLength": 1,
+      "description": "Claim carrying the policy names. Every one of its values must name an existing policy or the login is refused, so point it at a claim built for that purpose rather than at one carrying application roles.",
+      "x-ui-group": "Access",
+      "x-ui-order": 4,
+      "x-ui-advanced": true
+    },
+    "oidcPolicyScope": {
+      "type": "string",
+      "title": "OIDC policy scope",
+      "default": "",
+      "description": "Client scope requested so the policy claim is issued. Read only when oidc.clientProvisioning is dcr.",
+      "x-ui-group": "Access",
+      "x-ui-order": 5,
+      "x-ui-advanced": true
+    },
+    "outputSecretRef": {
+      "type": "string",
+      "default": "",
+      "title": "Published credentials Secret",
+      "description": "secretRef of the published s3 connection: an identity of this store (the credentialsSecret of a grant), e.g. one replicated to every namespace. Empty: <release>-s3-credentials, generated by ESO and granted read, list and write on every bucket.",
+      "x-ui-group": "Access",
+      "x-ui-order": 6,
+      "x-ui-advanced": true
+    }
+  }
+}

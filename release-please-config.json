@@ -4,6 +4,13 @@
   "include-v-in-tag": true,
   "draft-pull-request": true,
   "packages": {
+    "packages/services/rustfs": {
+      "component": "rustfs",
+      "release-type": "simple",
+      "include-component-in-tag": true,
+      "tag-separator": "/",
+      "changelog-path": "CHANGELOG.md"
+    },
     "packages/services/seaweedfs": {
       "component": "seaweedfs",
       "release-type": "simple",

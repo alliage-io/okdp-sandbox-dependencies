@@ -1,0 +1,19 @@
+# OAuth client registered by DCR, with a scope for the policy claim.
+global:
+  okdp:
+    ingress: {suffix: example.org, className: nginx}
+    oidc:
+      enabled: true
+      issuerUri: https://sso.example.org/realms/okdp
+      scope: "openid profile email groups"
+      clientProvisioning: dcr
+      dcr:
+        registrationUrl: https://sso.example.org/realms/okdp/clients-registrations/openid-connect
+        authMethod: anonymous
+    certificateIssuers: {selfSigned: {name: corp-issuer}}
+    storageClass: {data: fast, workspace: shared}
+caBundleSecret: corp-ca
+oidcPolicyClaim: rustfs_policy
+oidcPolicyScope: rustfs
+oidcPolicies:
+  - {name: readers, actions: [READ, LIST], buckets: ["*"]}

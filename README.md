@@ -55,6 +55,7 @@ packages/
 │   ├── tools/                  # + deletion protection (ValidatingAdmissionPolicy)
 │   └── vault/
 └── services/
+    ├── rustfs/                 # s3 provider (alternative to seaweedfs)
     └── seaweedfs/              # s3 provider
 docs/components/        # the platform components built from these charts (for okdp-sandbox)
 scripts/vendor-charts.sh
@@ -77,6 +78,7 @@ half. Each chart's README documents its parameters and what changed from the Kub
 | [`local-secrets-provider`](./packages/system/local-secrets-provider) | `1.0.0-1.0.0` | Secrets provisioned from a static list and replicated, a local stand-in for a secret manager |
 | [`tools`](./packages/system/tools) | `1.0.0-1.0.0` | Reloader, replicator, and the `okdp.io/protected` deletion protection |
 | [`vault`](./packages/system/vault) | `0.34.1-1.0.0` | HashiCorp Vault, the secret backend a SecretStore points at, in dev mode by default |
+| [`rustfs`](./packages/services/rustfs) | `1.0.0-1.0.0` | RustFS single-node object store, an alternative to seaweedfs (S3, OIDC console sign-in); one `s3` output |
 | [`seaweedfs`](./packages/services/seaweedfs) | `4.47.0-1.0.0` | SeaweedFS object store (S3, IAM, STS); one `s3` output |
 
 ## Working on a chart

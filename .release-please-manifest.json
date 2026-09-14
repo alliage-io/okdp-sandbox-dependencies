@@ -1,4 +1,5 @@
 {
+  "packages/services/rustfs": "1.0.0",
   "packages/services/seaweedfs": "1.0.0",
   "packages/system/cert-manager": "1.0.0",
   "packages/system/cnpg-postgresql": "1.0.0",
