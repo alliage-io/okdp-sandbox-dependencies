@@ -46,4 +46,10 @@ caClusterIssuers: {{ .Values.issuers.caClusterIssuers | default list | toYaml | 
 selfSignedClusterIssuers: {{ .Values.issuers.selfSignedClusterIssuers | default list | toYaml | nindent 2 }}
 bundle:
   enabled: false
+# Never make the CA Secrets replicable: the upstream default (replicator,
+# allowedNamespaces ".*") lets any namespace copy the CA private key
+# (tls.key) with a replicate-from annotation. trust-manager reads the CA
+# certificates in this namespace (see bundle.yaml); nothing needs replication.
+replication:
+  enabled: false
 {{- end -}}

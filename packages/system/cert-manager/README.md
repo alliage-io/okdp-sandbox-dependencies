@@ -49,6 +49,11 @@ platform component of its own layer (`platform/components/<NN>-<name>`, all in t
 - trust-manager's webhook certificate comes from cert-manager (`helmCert` off): the
   chart's generated certificate is non-deterministic (see `okdp-guard-allow.yaml`).
 - `protected: true` (KuboCD) is now the `okdp.io/protected` label.
+- cert-issuers' `replication` is forced off (upstream default: replicator annotations
+  allowing every namespace). The CA Secrets hold the CA private key (`tls.key`): with
+  replication any namespace could copy it with a `replicate-from` annotation.
+  trust-manager reads the CA certificates in this namespace, so nothing needs the
+  copies; the empty `<name>-ca` Secret of self-signed issuers is no longer rendered.
 
 ## Upstream versions
 
