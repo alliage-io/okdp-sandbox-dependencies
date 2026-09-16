@@ -22,6 +22,32 @@
       "description": "FQDN answered (CNAME) for every name under the ingress suffix: <ingress-nginx release>-controller.<namespace>.svc.cluster.local.",
       "x-ui-group": "DNS",
       "x-ui-order": 1
+    },
+    "image": {
+      "type": "object",
+      "title": "Job image",
+      "description": "Image of the patch Job (kubectl, bash, awk, jq). digest, when set, wins over tag.",
+      "additionalProperties": false,
+      "x-ui-advanced": true,
+      "properties": {
+        "repository": {
+          "type": "string",
+          "default": "quay.io/okdp/sandbox-images/kubectl",
+          "title": "Repository"
+        },
+        "tag": {
+          "type": "string",
+          "default": "latest",
+          "title": "Tag"
+        },
+        "digest": {
+          "type": "string",
+          "default": "sha256:cd354d5b25562b195b277125439c23e4046902d7f1abc0dc3c75aad04d298c17",
+          "pattern": "^(sha256:[a-f0-9]{64})?$",
+          "title": "Digest",
+          "description": "sha256:<64 hex>; empty uses the tag."
+        }
+      }
     }
   },
   "additionalProperties": false

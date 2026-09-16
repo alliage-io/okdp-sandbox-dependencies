@@ -10,3 +10,10 @@ connections: {}
 # controller Service, <ingress-nginx release>-controller.<namespace>.svc.cluster.local
 # (component 10-ingress-nginx in namespace ingress-nginx).
 ingressService: "ingress-nginx-ingress-nginx-controller.ingress-nginx.svc.cluster.local"
+
+# Image of the patch Job (kubectl, bash, awk, jq). digest, when set, wins over tag:
+# the image is pinned (the repository only publishes the moving tag "latest").
+image:
+  repository: quay.io/okdp/sandbox-images/kubectl
+  tag: latest
+  digest: "sha256:cd354d5b25562b195b277125439c23e4046902d7f1abc0dc3c75aad04d298c17"

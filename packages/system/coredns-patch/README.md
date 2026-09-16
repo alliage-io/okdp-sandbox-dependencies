@@ -13,14 +13,15 @@ It renders `oci://quay.io/okdp/charts/coredns-patch` 0.1.0, vendored under `vend
 (see `vendor.yaml`), for its ServiceAccount and RBAC. Its Job, which answers only `A`
 queries (an `AAAA` lookup then leaves the cluster and can time out), is dropped:
 `templates/job.yaml` replaces it, with the block of `templates/_values.tpl`. The Job
-name carries a hash of the block (a Job spec is immutable), so a changed block runs
-again on upgrade.
+name carries a hash of the block and the image (a Job spec is immutable), so a changed
+block or image runs again on upgrade.
 
 ## Parameters
 
 | Parameter | Default | Description |
 |---|---|---|
 | `ingressService` | `ingress-nginx-ingress-nginx-controller.ingress-nginx.svc.cluster.local` | FQDN of the ingress controller Service: `<ingress-nginx release>-controller.<namespace>.svc.cluster.local`. |
+| `image.repository` / `image.tag` / `image.digest` | `quay.io/okdp/sandbox-images/kubectl` / `latest` / `sha256:cd354d5b…` | Image of the patch Job (needs kubectl, bash, awk and jq). `digest`, when set, wins over `tag`: the repository only publishes `latest`, so the default is pinned by digest. |
 
 Platform values read: `global.okdp.ingress.suffix` (required).
 
@@ -35,6 +36,10 @@ with its hash suffix), whatever the release namespace: install it once per clust
   `ingress-nginx-controller.ingress-nginx…` (the sandbox set `ingress-nginx-main-controller…`).
 - Every query type of the suffix is answered in the cluster (was `A` only), and a
   Corefile patched by the former package is updated.
+- The Job image is a value, pinned by digest by default (was `kubectl:latest`).
+- The vendored Role still lets the Job patch every kube-system Deployment (it only
+  restarts `coredns`); narrowing it to `resourceNames: [coredns]` belongs upstream
+  (`vendor/` stays pristine).
 
 ## Tests
 

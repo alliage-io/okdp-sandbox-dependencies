@@ -20,3 +20,9 @@ template IN ANY {{ $suffix }} {
     fallthrough
 }
 {{- end -}}
+
+{{/* coredns-patch.image: the Job image, repository@digest when digest is set, else repository:tag. */}}
+{{- define "coredns-patch.image" -}}
+{{- $i := .Values.image -}}
+{{- if $i.digest -}}{{ printf "%s@%s" $i.repository $i.digest }}{{- else -}}{{ printf "%s:%s" $i.repository (required "coredns-patch: image.tag or image.digest is required" $i.tag) }}{{- end -}}
+{{- end -}}

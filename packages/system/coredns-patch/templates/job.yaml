@@ -4,13 +4,13 @@ templates/job.yaml, dropped in vendor.yaml): it removes every template block of
 the suffix (the upstream `template IN A` one included), inserts
 coredns-patch.block before the kubernetes plugin, and restarts CoreDNS only when
 the Corefile changed. A Job spec is immutable: its name carries a hash of the
-block, so a new block runs a new Job. RBAC: the upstream coredns-config-sa.
+block and the image, so a new block or image runs a new Job. RBAC: the upstream coredns-config-sa.
 */ -}}
 {{- $block := include "coredns-patch.block" . -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ printf "coredns-config-job-%s" ($block | sha256sum | trunc 8) }}
+  name: {{ printf "coredns-config-job-%s" (print $block (include "coredns-patch.image" .) | sha256sum | trunc 8) }}
   namespace: kube-system
   labels:
     {{- include "okdp.labels" . | nindent 4 }}
@@ -26,7 +26,7 @@ spec:
         kubernetes.io/os: linux
       containers:
         - name: kubectl
-          image: quay.io/okdp/sandbox-images/kubectl:latest
+          image: {{ include "coredns-patch.image" . | quote }}
           env:
             - name: SUFFIX
               value: {{ .Values.global.okdp.ingress.suffix | quote }}
