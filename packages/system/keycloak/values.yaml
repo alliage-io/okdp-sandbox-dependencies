@@ -28,6 +28,13 @@ realm:
   # At least accessTokenLifespan: Keycloak caps a token's life by the session.
   ssoSessionIdleTimeout: 3600
   ssoSessionMaxLifespan: 36000
+  # Brute force detection: temporary lockout after failureFactor failed logins
+  # (never permanent, so a wrong-password loop cannot lock an account for good).
+  bruteForce:
+    enabled: true
+    failureFactor: 10
+    waitIncrementSeconds: 60
+    maxFailureWaitSeconds: 900
   # User profile: Keycloak keeps only the attributes it declares. username, email,
   # firstName and lastName are always declared; attributes adds more (admin only
   # unless permissions say otherwise), e.g. [{name: comment}, {name: uid}] for the

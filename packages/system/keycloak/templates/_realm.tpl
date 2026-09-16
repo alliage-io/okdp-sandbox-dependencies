@@ -118,6 +118,8 @@ Always rendered, so the realm file is the whole profile.
 {{- $userProfile := dict "attributes" $upAttrs
       "groups" (list (dict "name" "user-metadata" "displayHeader" "User metadata" "displayDescription" "Attributes, which refer to user metadata")) -}}
 {{- with $up.unmanagedAttributePolicy }}{{ $_ := set $userProfile "unmanagedAttributePolicy" . }}{{ end -}}
+{{- $bf := .Values.realm.bruteForce | default dict -}}
+{{- $bfOn := ternary $bf.enabled true (hasKey $bf "enabled") -}}
 {{- $realm := dict
       "realm" .Values.realm.name
       "enabled" true
@@ -130,6 +132,11 @@ Always rendered, so the realm file is the whole profile.
       "accessTokenLifespan" (.Values.realm.accessTokenLifespan | default 3600)
       "ssoSessionIdleTimeout" (.Values.realm.ssoSessionIdleTimeout | default 3600)
       "ssoSessionMaxLifespan" (.Values.realm.ssoSessionMaxLifespan | default 36000)
+      "bruteForceProtected" $bfOn
+      "permanentLockout" false
+      "failureFactor" ($bf.failureFactor | default 10)
+      "waitIncrementSeconds" ($bf.waitIncrementSeconds | default 60)
+      "maxFailureWaitSeconds" ($bf.maxFailureWaitSeconds | default 900)
       "attributes" (dict "userProfileEnabled" "true")
       "userProfile" $userProfile
       "components" (dict "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy" $policies) -}}

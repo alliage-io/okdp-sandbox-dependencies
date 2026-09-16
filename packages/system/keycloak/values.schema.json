@@ -110,6 +110,38 @@
           "default": 36000,
           "title": "SSO session max lifespan (s)"
         },
+        "bruteForce": {
+          "type": "object",
+          "title": "Brute force detection",
+          "description": "Temporary lockout of an account after failureFactor failed logins (the wait grows by waitIncrementSeconds up to maxFailureWaitSeconds). Never a permanent lockout.",
+          "additionalProperties": false,
+          "x-ui-advanced": true,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "title": "Enabled"
+            },
+            "failureFactor": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 10,
+              "title": "Failed logins before lockout"
+            },
+            "waitIncrementSeconds": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 60,
+              "title": "Wait increment (s)"
+            },
+            "maxFailureWaitSeconds": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 900,
+              "title": "Max lockout (s)"
+            }
+          }
+        },
         "userProfile": {
           "type": "object",
           "title": "User profile",
