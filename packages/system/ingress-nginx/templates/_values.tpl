@@ -6,8 +6,9 @@
 {{- end -}}
 controller:
   allowSnippetAnnotations: false
-  extraArgs:
-    enable-ssl-passthrough: true
+  # No --enable-ssl-passthrough: no platform Ingress uses the ssl-passthrough
+  # annotation, and passthrough lets any Ingress bypass TLS termination (and the
+  # controller's own L7 checks) for its host.
   admissionWebhooks:
     enabled: true
   # The IngressClass the platform charts use (global.okdp.ingress.className).

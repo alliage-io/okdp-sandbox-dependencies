@@ -10,7 +10,7 @@ in one of three deployment modes:
 It renders the upstream chart `ingress-nginx` 4.15.1 (controller v1.15.1)
 (https://kubernetes.github.io/ingress-nginx, not published as an OCI chart), vendored
 under `vendor/` (see `vendor.yaml`), with values computed in `templates/_values.tpl`.
-SSL passthrough is on, snippet annotations are off, the admission webhook is on (its
+SSL passthrough is off, snippet annotations are off, the admission webhook is on (its
 certificate Jobs are pre/post-install and pre/post-upgrade hooks, Argo CD PreSync/PostSync).
 
 **The ingress-nginx project is retired**: 4.15.1 (March 2026) is its final release, the
@@ -35,6 +35,11 @@ namespace `ingress-nginx`: `ingress-nginx-ingress-nginx-controller`), the value 
 `coredns-patch` chart's `ingressService`.
 
 ## Changes from the KuboCD package
+
+- SSL passthrough is off (`--enable-ssl-passthrough` was on): no platform Ingress uses
+  `nginx.ingress.kubernetes.io/ssl-passthrough`. The admission webhook stays reachable
+  from every pod: chart 4.15.1 has no option to restrict it with a NetworkPolicy
+  (`controller.networkPolicy` opens the webhook port to all sources).
 
 - The IngressClass follows `global.okdp.ingress.className` (was the chart default `nginx`).
 - Objects are named after the release (the controller Service was `ingress-nginx-main-controller`).
