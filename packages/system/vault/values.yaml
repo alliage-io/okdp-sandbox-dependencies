@@ -6,8 +6,10 @@ global:
 # External connections (none used by this chart).
 connections: {}
 
-# Dev mode: unsealed in-memory server, root token "root", emptied on restart. Sandbox only.
-dev: true
+# Dev mode: unsealed in-memory server, root token "root", emptied on restart. Sandbox
+# only: set dev: true explicitly there. Off (default), Vault starts sealed with file
+# storage (standalone): initialise and unseal it (vault operator init / unseal).
+dev: false
 # Host name, the platform ingress suffix is appended.
 ingressHost: vault
 uiEnabled: true

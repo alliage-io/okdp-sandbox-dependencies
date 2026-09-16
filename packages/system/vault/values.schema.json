@@ -17,7 +17,7 @@
     },
     "dev": {
       "type": "boolean",
-      "default": true,
+      "default": false,
       "title": "Development mode",
       "description": "Unsealed in-memory server with root token \"root\": the store is emptied on every restart. Sandbox only.",
       "x-ui-group": "Server",
