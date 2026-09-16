@@ -22,7 +22,7 @@ Keycloak 26).
 | Parameter | Default | Description |
 |---|---|---|
 | `db` | (required) | `database-server` connection (engine `postgresql`); its Secret holds `username` and `password`. |
-| `adminUser` / `adminPassword` | `admin` / `admin` | Bootstrap admin of the master realm (`KC_BOOTSTRAP_ADMIN_*`, created on the first start); the password is in the Secret `<release>-admin`, also used by keycloak-config-cli. |
+| `adminUser` / `adminPassword` | `admin` / `""` | Bootstrap admin of the master realm (`KC_BOOTSTRAP_ADMIN_*`, created on the first start); the password is in the Secret `<release>-admin`, also used by keycloak-config-cli. Empty (default): generated once in the cluster by an ESO Password generator (`okdp.generatedSecret`, needs External Secrets Operator); read it with `kubectl get secret <release>-admin -o jsonpath='{.data.admin-password}' \| base64 -d`. There is no well-known default password any more. |
 | `ingressHost` | `keycloak` | Host `<ingressHost>.<ingress suffix>`: the platform issuer `global.okdp.oidc.issuerUri` points here. |
 | `cpu` / `memoryGi` | `0.5` / `2` | Requests; limits are twice the requests. |
 | `realm` | `{name: master, ...}` | `name` (required), `displayName`, `accessTokenLifespan`, `ssoSessionIdleTimeout`, `ssoSessionMaxLifespan`, `userProfile` (below). |

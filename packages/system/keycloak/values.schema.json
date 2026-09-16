@@ -26,9 +26,9 @@
     },
     "adminPassword": {
       "type": "string",
-      "default": "admin",
+      "default": "",
       "title": "Admin password",
-      "description": "Stored in the Secret <release>-admin.",
+      "description": "Stored in the Secret <release>-admin. Empty: generated once in the cluster (ESO Password generator).",
       "x-ui-group": "Admin",
       "x-ui-order": 2,
       "x-ui-columns": 2,

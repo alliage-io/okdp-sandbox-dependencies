@@ -7,8 +7,10 @@ global:
 connections: {}
 
 adminUser: admin
-# Stored in the Secret <release>-admin.
-adminPassword: admin
+# Stored in the Secret <release>-admin. Empty (default): generated once in the
+# cluster (ESO Password generator); read it with
+#   kubectl get secret <release>-admin -o jsonpath='{.data.admin-password}' | base64 -d
+adminPassword: ""
 # Host name, the ingress suffix is appended (the platform OIDC issuer points here).
 ingressHost: keycloak
 # Memory request in GiB / CPU request in vCPU. Limits are twice the requests.
