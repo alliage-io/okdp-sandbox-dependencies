@@ -89,6 +89,8 @@ jobs:
       contents: read
       packages: write
     # TODO(no-kubocd): @v1 and drop tools_ref/sibling_repositories once merged.
+    # SECURITY (CI-01): @no-kubocd and tools_ref are mutable refs; pin both to
+    # the same 40-hex commit SHA once the branch stops moving.
     uses: OKDP/gh-workflows/.github/workflows/okdp-chart-ci.yml@no-kubocd
     with:
       tools_ref: no-kubocd
@@ -102,4 +104,6 @@ jobs:
       package_paths: ${{ needs.release-please.outputs.paths_released }}
       oci_package_prefix: "${{ needs.get-package-oci-prefix.outputs.oci_package_prefix }}"
       runs-on: "ubuntu-latest"
-    secrets: inherit
+    secrets:
+      REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+      REGISTRY_ROBOT_TOKEN: ${{ secrets.REGISTRY_ROBOT_TOKEN }}
