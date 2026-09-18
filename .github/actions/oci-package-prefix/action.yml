@@ -32,7 +32,7 @@ runs:
   steps:
 
     - name: Install yq
-      uses: mikefarah/yq@v4.45.1
+      uses: mikefarah/yq@8bf425b4d1344db7cd469a8d10a390876e0c77fd # v4.45.1
 
     - name: Read packageRepository from values file and compute oci prefix
       id: values
