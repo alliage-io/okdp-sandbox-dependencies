@@ -20,6 +20,9 @@ on:
   pull_request:
     types: [opened, reopened, synchronize]
 
+permissions:
+  contents: read
+
 jobs:
   commits:
     # SECURITY (CI-01): @main is a mutable ref; pin to a commit SHA of

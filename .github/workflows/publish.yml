@@ -20,8 +20,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 # https://docs.github.com/en/actions/using-jobs/using-concurrency
 concurrency:
@@ -32,6 +31,8 @@ concurrency:
 jobs:
   get-package-oci-prefix:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       oci_package_prefix: ${{ steps.prefix.outputs.oci_package_prefix }}
     steps:
