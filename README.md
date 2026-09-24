@@ -77,7 +77,7 @@ half. Each chart's README documents its parameters and what changed from the Kub
 | [`keycloak`](./packages/system/keycloak) | `7.3.2-1.0.0` | Keycloak identity and access management on keycloakx and the official image (consumes a `database-server` connection) |
 | [`local-secrets-provider`](./packages/system/local-secrets-provider) | `1.0.0-1.0.0` | Secrets provisioned from a static list and replicated, a local stand-in for a secret manager |
 | [`tools`](./packages/system/tools) | `1.0.0-1.0.0` | Reloader, replicator, and the `okdp.io/protected` deletion protection |
-| [`vault`](./packages/system/vault) | `0.34.1-1.0.0` | HashiCorp Vault, the secret backend a SecretStore points at, in dev mode by default |
+| [`vault`](./packages/system/vault) | `0.34.1-1.0.0` | HashiCorp Vault, the secret backend a SecretStore points at; dev mode (sandbox only) is opt-in |
 | [`rustfs`](./packages/services/rustfs) | `1.0.0-1.0.0` | RustFS single-node object store, an alternative to seaweedfs (S3, OIDC console sign-in); one `s3` output |
 | [`seaweedfs`](./packages/services/seaweedfs) | `4.47.0-1.0.0` | SeaweedFS object store (S3, IAM, STS); one `s3` output |
 
