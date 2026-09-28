@@ -36,9 +36,9 @@ of the `keycloak` database (cnpg-postgresql) and the credentials Secret of Keycl
 ## Tests
 
 ```sh
+scripts/vendor-charts.sh packages/system/local-secrets-provider   # download vendor/ (not committed)
 helm dependency build packages/system/local-secrets-provider
 helm lint packages/system/local-secrets-provider -f packages/system/local-secrets-provider/ci/sandbox-values.yaml
 helm template okdp-system-local-secrets-provider packages/system/local-secrets-provider -n okdp-system \
   -f packages/system/local-secrets-provider/ci/sandbox-values.yaml
-scripts/vendor-charts.sh --check packages/system/local-secrets-provider
 ```

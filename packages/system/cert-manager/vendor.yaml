@@ -1,5 +1,5 @@
 # Upstream charts rendered by okdp.vendor.render (templates/*.yaml).
-# Refresh vendor/ with: scripts/vendor-charts.sh packages/system/cert-manager
+# vendor/ is downloaded, not committed: scripts/vendor-charts.sh packages/system/cert-manager
 charts:
   - name: cert-manager
     repository: https://charts.jetstack.io

@@ -35,10 +35,10 @@ Platform values read: `global.okdp.ingress.suffix`, `ingress.className`,
 ## Tests
 
 ```sh
+scripts/vendor-charts.sh packages/system/vault   # download vendor/ (not committed)
 helm dependency build packages/system/vault
 for f in packages/system/vault/ci/*-values.yaml; do
   helm lint packages/system/vault -f "$f"
   helm template vault-vault packages/system/vault -n vault -f "$f" >/dev/null
 done
-scripts/vendor-charts.sh --check packages/system/vault
 ```

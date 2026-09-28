@@ -47,10 +47,10 @@ namespace `ingress-nginx`: `ingress-nginx-ingress-nginx-controller`), the value 
 ## Tests
 
 ```sh
+scripts/vendor-charts.sh packages/system/ingress-nginx   # download vendor/ (not committed)
 helm dependency build packages/system/ingress-nginx
 for f in packages/system/ingress-nginx/ci/*-values.yaml; do
   helm lint packages/system/ingress-nginx -f "$f"
   helm template ingress-nginx-ingress-nginx packages/system/ingress-nginx -n ingress-nginx -f "$f" >/dev/null
 done
-scripts/vendor-charts.sh --check packages/system/ingress-nginx
 ```

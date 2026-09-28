@@ -160,10 +160,10 @@ connections:
 ## Tests
 
 ```sh
+scripts/vendor-charts.sh packages/services/rustfs   # download vendor/ (not committed)
 helm dependency build packages/services/rustfs
 for f in packages/services/rustfs/ci/*-values.yaml; do
   helm lint packages/services/rustfs -f "$f"
   helm template default-storage packages/services/rustfs -n default -f "$f" >/dev/null
 done
-scripts/vendor-charts.sh --check packages/services/rustfs
 ```

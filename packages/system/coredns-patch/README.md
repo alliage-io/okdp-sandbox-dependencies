@@ -44,10 +44,10 @@ with its hash suffix), whatever the release namespace: install it once per clust
 ## Tests
 
 ```sh
+scripts/vendor-charts.sh packages/system/coredns-patch   # download vendor/ (not committed)
 helm dependency build packages/system/coredns-patch
 for f in packages/system/coredns-patch/ci/*-values.yaml; do
   helm lint packages/system/coredns-patch -f "$f"
   helm template kube-system-coredns-patch packages/system/coredns-patch -n kube-system -f "$f" >/dev/null
 done
-scripts/vendor-charts.sh --check packages/system/coredns-patch
 ```

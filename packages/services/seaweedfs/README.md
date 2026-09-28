@@ -85,10 +85,10 @@ namespace, so consumers declare it in a connection file with these values and, a
 ## Tests
 
 ```sh
+scripts/vendor-charts.sh packages/services/seaweedfs   # download vendor/ (not committed)
 helm dependency build packages/services/seaweedfs
 for f in packages/services/seaweedfs/ci/*-values.yaml; do
   helm lint packages/services/seaweedfs -f "$f"
   helm template default-storage packages/services/seaweedfs -n default -f "$f" >/dev/null
 done
-scripts/vendor-charts.sh --check packages/services/seaweedfs
 ```

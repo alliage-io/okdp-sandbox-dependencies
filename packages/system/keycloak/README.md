@@ -148,10 +148,10 @@ database and restarts until the database answers.
 ## Tests
 
 ```sh
+scripts/vendor-charts.sh packages/system/keycloak   # download vendor/ (not committed)
 helm dependency build packages/system/keycloak
 for f in packages/system/keycloak/ci/*-values.yaml; do
   helm lint packages/system/keycloak -f "$f"
   helm template keycloak-keycloak packages/system/keycloak -n keycloak -f "$f" >/dev/null
 done
-scripts/vendor-charts.sh --check packages/system/keycloak
 ```

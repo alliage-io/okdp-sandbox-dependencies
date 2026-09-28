@@ -28,7 +28,7 @@ Every chart follows the OKDP chart rules (shared with `platform-packages` and
 - values: `global.okdp` (platform values, the first values layer), `connections` (external
   connections), then the chart parameters (the former KuboCD parameters);
 - upstream charts whose values are computed are **vendored** under `vendor/<name>/`
-  (listed in `vendor.yaml`, refreshed and checked with
+  (listed in `vendor.yaml`, downloaded, not committed, with
   [`scripts/vendor-charts.sh`](./scripts/vendor-charts.sh)) and rendered with
   `okdp.vendor.render` from the library chart `okdp-lib`;
 - every chart renders the instance descriptor ConfigMap `<release>-okdp` (URL, usage, the
@@ -87,13 +87,12 @@ The charts depend on `okdp-lib` from a sibling checkout of `OKDP/okdp-lib` durin
 no-KuboCD migration (`file://../../../../okdp-lib`):
 
 ```bash
+scripts/vendor-charts.sh packages/system/keycloak           # download vendor/ (not committed), again after a version bump
 helm dependency build packages/system/keycloak
 for f in packages/system/keycloak/ci/*-values.yaml; do
   helm lint packages/system/keycloak -f "$f"
   helm template keycloak-keycloak packages/system/keycloak -n keycloak -f "$f"
 done
-scripts/vendor-charts.sh packages/system/keycloak           # refresh vendor/ after a version bump
-scripts/vendor-charts.sh --check packages/system/keycloak   # vendor/ matches vendor.yaml
 
 # The CI checks, from a checkout of OKDP/gh-workflows next to this repository:
 ../gh-workflows/scripts/okdp-chart-guard.sh packages/system/keycloak
@@ -104,8 +103,8 @@ scripts/vendor-charts.sh --check packages/system/keycloak   # vendor/ matches ve
 
 The workflows call the reusable
 [`okdp-chart-ci.yml`](https://github.com/OKDP/gh-workflows#okdp-chart-ci-okdp-chart-ciyml)
-of `OKDP/gh-workflows`: the chart guard (forbidden patterns, descriptor, schema, vendored
-charts), `helm lint`, `helm template` of every `ci/*-values.yaml`, `kubeconform`, then
+of `OKDP/gh-workflows`: `scripts/vendor-charts.sh` (downloads `vendor/`), the chart guard
+(forbidden patterns, descriptor, schema, vendored charts), `helm lint`, `helm template` of every `ci/*-values.yaml`, `kubeconform`, then
 `helm package` and `helm push`.
 
 - [`ci.yml`](./.github/workflows/ci.yml) (push, pull request, dispatch): the changed charts,

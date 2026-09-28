@@ -1,5 +1,5 @@
 # Upstream charts rendered by okdp.vendor.render (templates/*.yaml).
-# Refresh vendor/ with: scripts/vendor-charts.sh packages/system/tools
+# vendor/ is downloaded, not committed: scripts/vendor-charts.sh packages/system/tools
 charts:
   - name: reloader
     repository: https://stakater.github.io/stakater-charts

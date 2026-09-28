@@ -74,10 +74,10 @@ v0.16.0). Upstream changes that matter here:
 ## Tests
 
 ```sh
+scripts/vendor-charts.sh packages/system/cert-manager   # download vendor/ (not committed)
 helm dependency build packages/system/cert-manager
 for f in packages/system/cert-manager/ci/*-values.yaml; do
   helm lint packages/system/cert-manager -f "$f"
   helm template cert-manager-cert-manager packages/system/cert-manager -n cert-manager -f "$f" >/dev/null
 done
-scripts/vendor-charts.sh --check packages/system/cert-manager
 ```

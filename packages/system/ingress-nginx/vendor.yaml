@@ -1,5 +1,5 @@
 # Upstream charts rendered by okdp.vendor.render (templates/*.yaml).
-# Refresh vendor/ with: scripts/vendor-charts.sh packages/system/ingress-nginx
+# vendor/ is downloaded, not committed: scripts/vendor-charts.sh packages/system/ingress-nginx
 charts:
   - name: ingress-nginx
     repository: https://kubernetes.github.io/ingress-nginx

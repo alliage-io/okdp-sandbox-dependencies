@@ -1,5 +1,5 @@
 # Upstream charts rendered by okdp.vendor.render (templates/*.yaml).
-# Refresh vendor/ with: scripts/vendor-charts.sh packages/system/coredns-patch
+# vendor/ is downloaded, not committed: scripts/vendor-charts.sh packages/system/coredns-patch
 charts:
   - name: coredns-patch
     repository: oci://quay.io/okdp/charts

@@ -37,10 +37,10 @@ Platform values read: `global.okdp.ingress.suffix` (required).
 ## Tests
 
 ```sh
+scripts/vendor-charts.sh packages/system/dns-server   # download vendor/ (not committed)
 helm dependency build packages/system/dns-server
 for f in packages/system/dns-server/ci/*-values.yaml; do
   helm lint packages/system/dns-server -f "$f"
   helm template dns-server-dns-server packages/system/dns-server -n dns-server -f "$f" >/dev/null
 done
-scripts/vendor-charts.sh --check packages/system/dns-server
 ```

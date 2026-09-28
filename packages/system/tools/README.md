@@ -64,10 +64,10 @@ No controller, no CRD.
 ## Tests
 
 ```sh
+scripts/vendor-charts.sh packages/system/tools   # download vendor/ (not committed)
 helm dependency build packages/system/tools
 for f in packages/system/tools/ci/*-values.yaml; do
   helm lint packages/system/tools -f "$f"
   helm template kube-tools-tools packages/system/tools -n kube-tools -f "$f" >/dev/null
 done
-scripts/vendor-charts.sh --check packages/system/tools
 ```
