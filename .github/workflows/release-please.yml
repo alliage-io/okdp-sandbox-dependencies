@@ -92,13 +92,12 @@ jobs:
     permissions:
       contents: read
       packages: write
-    # TODO(no-kubocd): @v1 and drop tools_ref/sibling_repositories once merged.
+    # TODO: @v1 and drop tools_ref once merged.
     # SECURITY (CI-01): @no-kubocd and tools_ref are mutable refs; pin both to
     # the same 40-hex commit SHA once the branch stops moving.
     uses: OKDP/gh-workflows/.github/workflows/okdp-chart-ci.yml@no-kubocd
     with:
       tools_ref: no-kubocd
-      sibling_repositories: OKDP/okdp-lib@main
       ci_registry: "ghcr.io"
       registry: "quay.io"
       publish_to_registry: "true"

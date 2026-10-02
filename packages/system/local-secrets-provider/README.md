@@ -31,7 +31,7 @@ of the `keycloak` database (cnpg-postgresql) and the credentials Secret of Keycl
   `secret-generator.v1.mittwald.de/autogenerate` for kubernetes-secret-generator, which
   the `tools` chart no longer ships; a value generated in the cluster after Helm applied
   the Secret was drift for Flux and Argo CD anyway. Give explicit values, or generate
-  passwords with ESO (`okdp.generatedSecret` in okdp-lib).
+  passwords with ESO (`okdp.generatedSecret` in okdp-lib-chart).
 
 ## Tests
 

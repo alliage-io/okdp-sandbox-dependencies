@@ -11,9 +11,9 @@
       "type": "object",
       "description": "External connections, one values layer per connection file. Not used by this chart."
     },
-    "okdp-lib": {
+    "okdp-lib-chart": {
       "type": "object",
-      "description": "Values slot Helm creates for the okdp-lib library dependency. Not a parameter."
+      "description": "Values slot Helm creates for the okdp-lib-chart library dependency. Not a parameter."
     },
     "databases": {
       "type": "array",

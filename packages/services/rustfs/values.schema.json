@@ -37,9 +37,9 @@
         }
       }
     },
-    "okdp-lib": {
+    "okdp-lib-chart": {
       "type": "object",
-      "description": "Values slot Helm creates for the okdp-lib library dependency. Not a parameter."
+      "description": "Values slot Helm creates for the okdp-lib-chart library dependency. Not a parameter."
     },
     "rootAccessKey": {
       "type": "string",

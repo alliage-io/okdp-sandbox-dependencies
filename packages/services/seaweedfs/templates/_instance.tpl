@@ -1,4 +1,4 @@
-{{/* Descriptor hooks (okdp-lib): the filer UI, one s3 output. */}}
+{{/* Descriptor hooks (okdp-lib-chart): the filer UI, one s3 output. */}}
 {{- define "okdp.instance.url" -}}https://{{ include "seaweedfs.okdp.consoleHost" . }}{{- end -}}
 
 {{- define "okdp.instance.usage" -}}
@@ -12,7 +12,7 @@ in a connection file, with their own identity (a grant of this store) as secretR
 
 {{/*
 One s3 output named after the release. No credentials by default: each consumer
-brings its own identity (grants); okdp-lib adds a secretRef only when one is
+brings its own identity (grants); okdp-lib-chart adds a secretRef only when one is
 given, here outputSecretRef (a Secret consumers can use), when set.
 */}}
 {{- define "okdp.instance.outputs" -}}

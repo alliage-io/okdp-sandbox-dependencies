@@ -1,4 +1,4 @@
-{{/* Descriptor hooks (okdp-lib): no UI, no output. */}}
+{{/* Descriptor hooks (okdp-lib-chart): no UI, no output. */}}
 {{- define "okdp.instance.usage" -}}
 cert-manager issues the TLS certificates of the platform ingresses.
 {{- with .Values.issuers.selfSignedClusterIssuers }}

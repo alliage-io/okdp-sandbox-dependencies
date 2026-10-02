@@ -1,4 +1,4 @@
-{{/* Descriptor hooks (okdp-lib): no UI, no output. */}}
+{{/* Descriptor hooks (okdp-lib-chart): no UI, no output. */}}
 {{- define "okdp.instance.usage" -}}
 NGINX Ingress Controller ({{ .Values.mode }} mode) for the IngressClass `{{ (include "okdp.platform.get" (dict "ctx" . "path" "ingress.className") | fromYaml).v | default "nginx" }}`.
 {{- if eq .Values.mode "nodePort" }}

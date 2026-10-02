@@ -30,7 +30,7 @@ Every chart follows the OKDP chart rules (shared with `platform-packages` and
 - upstream charts whose values are computed are **vendored** under `vendor/<name>/`
   (listed in `vendor.yaml`, downloaded, not committed, with
   [`scripts/vendor-charts.sh`](./scripts/vendor-charts.sh)) and rendered with
-  `okdp.vendor.render` from the library chart `okdp-lib`;
+  `okdp.vendor.render` from the library chart `okdp-lib-chart`;
 - every chart renders the instance descriptor ConfigMap `<release>-okdp` (URL, usage, the
   connections it provides);
 - nothing differs between `helm install` (Flux) and `helm template` (Argo CD): no `lookup`,
@@ -83,8 +83,8 @@ half. Each chart's README documents its parameters and what changed from the Kub
 
 ## Working on a chart
 
-The charts depend on `okdp-lib` from a sibling checkout of `OKDP/okdp-lib` during the
-no-KuboCD migration (`file://../../../../okdp-lib`):
+The charts depend on `okdp-lib-chart` from the OCI registry
+`oci://quay.io/okdp/okdp-lib-chart` (`helm dependency build` fetches it):
 
 ```bash
 scripts/vendor-charts.sh packages/system/keycloak           # download vendor/ (not committed), again after a version bump

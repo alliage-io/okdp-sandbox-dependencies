@@ -1,4 +1,4 @@
-{{/* Descriptor hooks (okdp-lib): the Vault UI, no output. */}}
+{{/* Descriptor hooks (okdp-lib-chart): the Vault UI, no output. */}}
 {{- define "okdp.instance.url" -}}
 https://{{ .Values.ingressHost }}.{{ .Values.global.okdp.ingress.suffix }}
 {{- end -}}

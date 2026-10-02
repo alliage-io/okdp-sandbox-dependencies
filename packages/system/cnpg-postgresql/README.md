@@ -45,7 +45,7 @@ For each database, an output named `<release>-<database>` (`_` becomes `-`):
   secretRef: {name: creds-keycloak-db}
 ```
 
-`database-server` has no internal naming convention (okdp-lib `okdp.connection`): the
+`database-server` has no internal naming convention (okdp-lib-chart `okdp.connection`): the
 cluster lives in another namespace than its consumers and publishes several outputs. A
 consumer therefore references it through an **external connection**, a values layer
 carrying these values, whose `secretRef` names a Secret of the consumer's namespace (here

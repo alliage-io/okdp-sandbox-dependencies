@@ -1,4 +1,4 @@
-{{/* Descriptor hooks (okdp-lib): the admin console, no output. */}}
+{{/* Descriptor hooks (okdp-lib-chart): the admin console, no output. */}}
 {{- define "okdp.instance.url" -}}https://{{ include "keycloak.host" . }}{{- end -}}
 {{- define "okdp.instance.usage" -}}
 Keycloak provides centralized authentication and authorization.

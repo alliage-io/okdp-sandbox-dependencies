@@ -42,7 +42,7 @@ Identity is Keycloak only (`20-keycloak`): `oidc.clientProvisioning` is `existin
 ## Connections between components
 
 `database-server` and `s3` are external-only contracts (no internal naming convention in
-okdp-lib): cnpg-postgresql and seaweedfs publish their outputs in their descriptor
+okdp-lib-chart): cnpg-postgresql and seaweedfs publish their outputs in their descriptor
 ConfigMaps (`<release>-okdp`), and a consumer declares the provider in a connection
 values layer whose `secretRef` names a Secret of the consumer's namespace:
 

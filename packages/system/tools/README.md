@@ -54,7 +54,7 @@ No controller, no CRD.
 - kubernetes-secret-generator is gone (`secretGenerator`): nothing in OKDP used it any
   more (local-secrets-provider no longer generates empty values), and the values it
   wrote into Secrets after Helm applied them were drift for Flux and Argo CD. Generated
-  passwords come from ESO (`okdp.generatedSecret` in okdp-lib). Its CRDs
+  passwords come from ESO (`okdp.generatedSecret` in okdp-lib-chart). Its CRDs
   (`*.secretgenerator.mittwald.de`) are not removed from a cluster that had them.
 - Reloader is the 2.x chart (was 1.0.72) and kubernetes-replicator 2.12.4 (was 2.9.2);
   the Reloader 3.x chart is still a beta.

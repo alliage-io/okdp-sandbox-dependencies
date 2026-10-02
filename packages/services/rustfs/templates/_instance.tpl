@@ -1,4 +1,4 @@
-{{/* Descriptor hooks (okdp-lib): the console URL, one s3 output. */}}
+{{/* Descriptor hooks (okdp-lib-chart): the console URL, one s3 output. */}}
 {{- define "okdp.instance.url" -}}
 https://{{ include "okdp-rustfs.consoleHost" . }}
 {{- end -}}

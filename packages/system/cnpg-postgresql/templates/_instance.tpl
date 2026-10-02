@@ -1,4 +1,4 @@
-{{/* Descriptor hooks (okdp-lib): no UI; one database-server output per database. */}}
+{{/* Descriptor hooks (okdp-lib-chart): no UI; one database-server output per database. */}}
 {{- define "okdp.instance.usage" -}}
 PostgreSQL cluster `{{ include "cnpg-postgresql.clusterName" . }}` (CloudNativePG), read-write endpoint `{{ include "cnpg-postgresql.host" . }}:5432`.
 {{- if .Values.databases }}
