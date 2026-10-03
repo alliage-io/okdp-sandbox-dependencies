@@ -6,7 +6,7 @@ next to this README is the component's `values.yaml`; its header gives the `inst
 Layers: `00` CRDs/operators, `10` infra, `20` identity/storage/db, `30` control plane (none
 here). A layer starts once every component of the layer below is ready.
 
-Release = `<project>-<name>`. Charts are `oci://quay.io/okdp/sandbox-charts/<service>` unless
+Release = `<project>-<name>`. Charts are `oci://repo.alliage.io:8082/okdp/sandbox-charts/<service>` unless <!-- TODO(no-kubocd): temporary registry, revert to quay.io/okdp once the OKDP charts are published there. -->
 the upstream chart is used directly.
 
 | Component | Project (namespace) | Service / chart | Version | Needs |

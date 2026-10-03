@@ -1,6 +1,7 @@
 # Platform component 20-trust-bundle: the OKDP chart cert-manager (packages/system/cert-manager).
 #   instance.yaml: {name: trust-bundle, project: cert-manager, service: cert-manager,
-#                   chart: oci://quay.io/okdp/sandbox-charts/cert-manager,
+# TODO(no-kubocd): temporary registry, revert to quay.io/okdp once the OKDP charts are published there.
+#                   chart: oci://repo.alliage.io:8082/okdp/sandbox-charts/cert-manager,
 #                   version: "1.21.2-1.0.0", connections: []}
 # The CA bundle, validated by trust-manager's webhook (10-cert-issuers must run first).
 # Its sources are the issuers listed below (by name only: they are created by 10-cert-issuers).

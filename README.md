@@ -85,8 +85,8 @@ half. Each chart's README documents its parameters and what changed from the Kub
 
 ## Working on a chart
 
-The charts depend on `okdp-lib-chart` from the OCI registry
-`oci://quay.io/okdp/okdp-lib-chart` (`helm dependency build` fetches it):
+The charts depend on `okdp-lib-chart` from the Helm repository
+`https://repo.alliage.io/repository/okdp-charts` (`helm dependency build` fetches it): <!-- TODO(no-kubocd): temporary registry, revert to quay.io/okdp once the OKDP charts are published there. -->
 
 ```bash
 scripts/vendor-charts.sh packages/system/keycloak           # download vendor/ (not committed), again after a version bump
