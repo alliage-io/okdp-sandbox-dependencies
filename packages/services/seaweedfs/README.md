@@ -53,6 +53,37 @@ Platform values read: `global.okdp.ingress.suffix`, `ingress.className`,
 (component `00-external-secrets`; the SecretStore and ExternalSecret are
 `external-secrets.io/v1`, served by ESO 0.17 and later) and Reloader (`tools`).
 
+## Upstream values
+
+Any value of the vendored `seaweedfs` chart can be set per instance under
+`upstream.seaweedfs`, merged over the values computed from the parameters
+(okdp-lib-chart `okdp.vendor.render`, option `upstream`):
+
+```yaml
+upstream:
+  seaweedfs:
+    image: {registry: mirror.example.org}
+    volume: {resources: {limits: {memory: 1Gi}}}
+    s3:
+      extraArgs: [-v=2]                            # appended to the chart's arguments
+      createBuckets: [{name: scratch}]             # appended to the buckets parameter
+    filer:
+      ingresses:
+        http:
+          annotations: {nginx.ingress.kubernetes.io/proxy-read-timeout: "600"}
+```
+
+The paths the platform relies on are refused, and the lists the chart sets are
+appended to rather than replaced: see `seaweedfs.okdp.upstream` in
+`templates/_values.tpl` (also listed in the schema description). Annotation
+keys carry dots, so the define itself refuses the filer ingress basic auth
+annotations (`nginx.ingress.kubernetes.io/auth-*`) and the Reloader annotation
+of the S3 gateway. `s3.extraVolumes` and `s3.extraVolumeMounts` are strings
+(they mount the IAM/STS file), so they are refused rather than appended to. An
+upstream value wins over the parameter it overlaps (`volume.replicas` over
+`volumeReplicas`). No key or value may contain `{{` (the schema and
+okdp-lib-chart both refuse it).
+
 ## Provided connection: `s3`, external only
 
 One output named after the release:

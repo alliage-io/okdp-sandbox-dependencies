@@ -34,6 +34,30 @@ The controller Service is `<release>-controller` (component `10-ingress-nginx` i
 namespace `ingress-nginx`: `ingress-nginx-ingress-nginx-controller`), the value of the
 `coredns-patch` chart's `ingressService`.
 
+## Upstream values
+
+Any value of the vendored `ingress-nginx` chart can be set per instance under
+`upstream.ingress-nginx`, merged over the values computed from the parameters
+(okdp-lib-chart `okdp.vendor.render`, option `upstream`):
+
+```yaml
+upstream:
+  ingress-nginx:
+    controller:
+      image: {registry: mirror.example.org}
+      resources: {requests: {cpu: 200m, memory: 256Mi}}
+      tolerations: [{key: dedicated, operator: Exists, effect: NoSchedule}]
+      config: {proxy-body-size: 64m}          # added to the controller ConfigMap
+```
+
+The paths the platform relies on are refused: names, the IngressClass, the
+exposure chosen by `mode` (Service, node ports, host networking, the MetalLB
+IP), the hardening above (SSL passthrough, snippet annotations and the
+annotation risk level, the admission webhook), autoscaling, RBAC: see
+`ingress-nginx.upstream.options` in `templates/_values.tpl` (also listed in the
+schema description). The wrapper sets no list, so a list replaces the chart's.
+No key or value may contain `{{` (the schema and okdp-lib-chart both refuse it).
+
 ## Changes from the KuboCD package
 
 - SSL passthrough is off (`--enable-ssl-passthrough` was on): no platform Ingress uses

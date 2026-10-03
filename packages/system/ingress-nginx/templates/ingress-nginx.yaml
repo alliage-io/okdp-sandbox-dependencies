@@ -1,1 +1,1 @@
-{{ include "okdp.vendor.render" (dict "ctx" . "chart" "ingress-nginx" "values" (include "ingress-nginx.upstream.values" . | fromYaml)) }}
+{{ include "okdp.vendor.render" (dict "ctx" . "chart" "ingress-nginx" "values" (include "ingress-nginx.upstream.values" . | fromYaml) "upstream" (include "ingress-nginx.upstream.options" . | fromYaml)) }}

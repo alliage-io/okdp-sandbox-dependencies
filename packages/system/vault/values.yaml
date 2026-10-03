@@ -15,3 +15,13 @@ ingressHost: vault
 uiEnabled: true
 # Label the StatefulSet and the injector okdp.io/protected=true (former KuboCD protected).
 protected: true
+
+# Values of the upstream vault chart, merged over the ones computed from the
+# parameters above (templates/_values.tpl, vault.upstream): any upstream value
+# can be set except the protected ones, e.g.
+#   upstream:
+#     vault:
+#       server:
+#         resources: {limits: {memory: 512Mi}}
+#         dataStorage: {size: 20Gi}
+upstream: {}

@@ -82,3 +82,14 @@ groups: []
 roles: []
 clients: []
 clientScopes: []
+
+# Values of the upstream keycloakx chart, merged over the ones computed from the
+# parameters above (templates/_values.tpl, keycloak.upstream.keycloakx): any
+# upstream value can be set except the protected ones, e.g.
+#   upstream:
+#     keycloakx:
+#       image: {repository: mirror.example.org/keycloak/keycloak}
+#       tolerations: [{key: dedicated, operator: Exists, effect: NoSchedule}]
+#       extraEnvFrom: |
+#         - configMapRef: {name: keycloak-extra-env}
+upstream: {}

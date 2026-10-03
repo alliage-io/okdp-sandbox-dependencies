@@ -50,7 +50,65 @@
           "x-ui-advanced": true
         }
       }
+    },
+    "upstream": {
+      "type": "object",
+      "title": "Upstream chart values",
+      "description": "Values of the upstream charts this chart renders, one object per chart, merged over the values it computes: any upstream parameter can be set, except the ones the platform relies on. Maps merge, lists and scalars replace. No key or value may contain '{{'.",
+      "default": {},
+      "x-ui-group": "Upstream values",
+      "x-ui-order": 1,
+      "x-ui-advanced": true,
+      "additionalProperties": false,
+      "properties": {
+        "reloader": {
+          "type": "object",
+          "title": "reloader",
+          "description": "Values of the reloader chart 2.2.17 (https://stakater.github.io/stakater-charts), rendered when reloader.enabled is set: image, reloader.deployment (resources, nodeSelector, tolerations), reloader.logLevel, reloader.ignoreNamespaces, ... Refused: fullnameOverride, reloader.rbac.enabled, reloader.serviceAccount.create, reloader.watchGlobally, reloader.isOpenshift, reloader.isArgoRollouts, reloader.serviceMonitor.enabled, reloader.verticalPodAutoscaler.enabled, reloader.deployment.env.secret.",
+          "default": {},
+          "x-ui-widget": "yaml",
+          "x-ui-order": 1,
+          "allOf": [
+            {
+              "$ref": "#/definitions/noTemplate"
+            }
+          ]
+        },
+        "kubernetes-replicator": {
+          "type": "object",
+          "title": "kubernetes-replicator",
+          "description": "Values of the kubernetes-replicator chart 2.12.4 (https://helm.mittwald.de), rendered when replicator.enabled is set: image, resources, nodeSelector, tolerations, replicationEnabled.configMaps/roles/roleBindings/serviceAccounts, ... Refused: fullnameOverride, namespaceOverride, grantClusterAdmin, serviceAccount.create, serviceAccount.privileges, namespacesPrivileges, replicationEnabled.secrets, replicationEnabled.privileges, replicationEnabled.rolesPrivileges, args, verticalPodAutoscaler.enabled.",
+          "default": {},
+          "x-ui-widget": "yaml",
+          "x-ui-order": 2,
+          "allOf": [
+            {
+              "$ref": "#/definitions/noTemplate"
+            }
+          ]
+        }
+      }
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "definitions": {
+    "noTemplate": {
+      "description": "No key or string value, at any depth, contains '{{': upstream charts pass some values to tpl.",
+      "not": {
+        "type": "string",
+        "pattern": "\\{\\{"
+      },
+      "propertyNames": {
+        "not": {
+          "pattern": "\\{\\{"
+        }
+      },
+      "additionalProperties": {
+        "$ref": "#/definitions/noTemplate"
+      },
+      "items": {
+        "$ref": "#/definitions/noTemplate"
+      }
+    }
+  }
 }

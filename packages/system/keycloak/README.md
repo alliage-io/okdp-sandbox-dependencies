@@ -128,6 +128,32 @@ Keycloak reads it as `KC_DB_URL` (`jdbc:postgresql://<host>:<port>/<dbName>`) an
 `KC_DB_USERNAME` / `KC_DB_PASSWORD` from the Secret. It starts in the same layer as its
 database and restarts until the database answers.
 
+## Upstream values
+
+Any value of the vendored `keycloakx` chart can be set per instance under
+`upstream.keycloakx`, merged over the values computed from the parameters
+(okdp-lib-chart `okdp.vendor.render`, option `upstream`):
+
+```yaml
+upstream:
+  keycloakx:
+    image: {repository: mirror.example.org/keycloak/keycloak}
+    tolerations: [{key: dedicated, operator: Exists, effect: NoSchedule}]
+    podAnnotations: {example.org/team: identity}
+    extraEnvFrom: |                                # extraEnv is the platform's
+      - configMapRef: {name: keycloak-extra-env}
+```
+
+The paths the platform relies on are refused: see `keycloak.upstream.keycloakx`
+in `templates/_values.tpl` (also listed in the schema description). `extraEnv`
+is a templated string carrying the issuer URL, the bootstrap admin and the
+database connection, so it cannot be appended to: add variables with
+`extraEnvFrom`. One replica with a local cache is fixed (`replicas`, `cache`).
+The realm (brute force detection, anonymous registration policies) is applied
+by keycloak-config-cli, outside the upstream chart. An upstream value wins over
+the parameter it overlaps (`resources` over `cpu` and `memoryGi`). No key or
+value may contain `{{` (the schema and okdp-lib-chart both refuse it).
+
 ## Changes from the KuboCD package
 
 - The codecentric `keycloakx` chart and the official Keycloak and keycloak-config-cli

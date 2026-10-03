@@ -114,3 +114,67 @@ s3:
         hosts:
           - {{ $apiHost }}
 {{- end -}}
+
+{{/*
+Instance-level upstream values (okdp-lib-chart okdp.vendor.render option
+`upstream`): an instance sets any value of the vendored chart under
+upstream.seaweedfs in its values.yaml, over the values computed above, except
+the protected paths (global, with enableSecurity, is always protected).
+Protected: the names and ports the s3 connection and the provisioning Job
+address (<release>-s3, -master, -filer-client) and the components they need;
+the S3 authentication (the ESO-written configuration Secret, the IAM/STS file
+mounted through s3.extraVolumes/extraVolumeMounts, strings that cannot be
+appended to); the hosts and TLS of the ingresses; and every switch
+okdp-guard-allow.yaml relies on (lookup, random or templated hooks while off:
+filer.s3, volume.resizeHook, sftp, allInOne, networkPolicy.enabled) plus cosi
+(cluster-scoped objects). Appended: the buckets and the S3 gateway arguments.
+Annotation keys carry dots, out of reach of the dotted protect paths: this
+helper refuses the basic auth annotations of the filer ingress and the
+Reloader annotation of the S3 gateway.
+*/}}
+{{- define "seaweedfs.okdp.upstream" -}}
+{{- $up := index (.Values.upstream | default dict) "seaweedfs" | default dict -}}
+{{- $refused := list
+     (list "filer.ingresses.http.annotations" ((($up.filer | default dict).ingresses | default dict).http | default dict).annotations "nginx.ingress.kubernetes.io/auth-")
+     (list "s3.annotations" ($up.s3 | default dict).annotations "secret.reloader.stakater.com/reload") -}}
+{{- range $r := $refused -}}
+  {{- if kindIs "map" (index $r 1) -}}
+    {{- range $k, $_ := index $r 1 -}}
+      {{- if hasPrefix (index $r 2) $k -}}
+        {{- fail (printf "seaweedfs: upstream.seaweedfs.%s.%s is set by the platform and cannot be changed" (index $r 0) $k) -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+protect:
+  - nameOverride
+  - fullnameOverride
+  - master.enabled
+  - master.port
+  - volume.enabled
+  - volume.resizeHook
+  - filer.enabled
+  - filer.port
+  - filer.s3
+  - filer.ingresses.http.enabled
+  - filer.ingresses.http.className
+  - filer.ingresses.http.host
+  - filer.ingresses.http.tls
+  - s3.enabled
+  - s3.port
+  - s3.enableAuth
+  - s3.existingConfigSecret
+  - s3.extraVolumes
+  - s3.extraVolumeMounts
+  - s3.ingress.enabled
+  - s3.ingress.className
+  - s3.ingress.host
+  - s3.ingress.tls
+  - sftp
+  - allInOne
+  - networkPolicy.enabled
+  - cosi
+append:
+  - s3.createBuckets
+  - s3.extraArgs
+{{- end -}}

@@ -486,11 +486,56 @@
       "title": "Client scopes",
       "x-ui-group": "Realm",
       "x-ui-order": 6
+    },
+    "upstream": {
+      "type": "object",
+      "title": "Upstream chart values",
+      "description": "Values of the upstream chart this chart renders, under its name, merged over the values it computes: any upstream parameter can be set, except the ones the platform relies on. Maps merge, lists and scalars replace. No key or value may contain '{{'.",
+      "default": {},
+      "x-ui-group": "Upstream values",
+      "x-ui-order": 1,
+      "x-ui-advanced": true,
+      "additionalProperties": false,
+      "properties": {
+        "keycloakx": {
+          "type": "object",
+          "title": "keycloakx",
+          "description": "Values of the keycloakx chart 7.3.2 (https://codecentric.github.io/helm-charts), for example image, resources, nodeSelector, tolerations, podAnnotations, extraEnvFrom, extraVolumes. Refused: fullnameOverride, nameOverride, namespaceOverride, command, args, extraEnv (add variables with extraEnvFrom), database, http.relativePath, proxy, cache, replicas, autoscaling.enabled, service.httpPort, ingress.enabled/ingressClassName/rules/tls, secrets.admin, secrets.realm, extraManifests.",
+          "default": {},
+          "x-ui-widget": "yaml",
+          "x-ui-order": 1,
+          "allOf": [
+            {
+              "$ref": "#/definitions/noTemplate"
+            }
+          ]
+        }
+      }
     }
   },
   "required": [
     "db",
     "realm"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "definitions": {
+    "noTemplate": {
+      "description": "No key or string value, at any depth, contains '{{': upstream charts pass some values to tpl.",
+      "not": {
+        "type": "string",
+        "pattern": "\\{\\{"
+      },
+      "propertyNames": {
+        "not": {
+          "pattern": "\\{\\{"
+        }
+      },
+      "additionalProperties": {
+        "$ref": "#/definitions/noTemplate"
+      },
+      "items": {
+        "$ref": "#/definitions/noTemplate"
+      }
+    }
+  }
 }

@@ -63,7 +63,52 @@
         "field": "mode",
         "value": "nodePort"
       }
+    },
+    "upstream": {
+      "type": "object",
+      "title": "Upstream chart values",
+      "description": "Values of the upstream chart this chart renders, merged over the values it computes: any upstream parameter can be set, except the ones the platform relies on. Maps merge, lists and scalars replace. No key or value may contain '{{'.",
+      "default": {},
+      "x-ui-group": "Upstream values",
+      "x-ui-order": 1,
+      "x-ui-advanced": true,
+      "additionalProperties": false,
+      "properties": {
+        "ingress-nginx": {
+          "type": "object",
+          "title": "ingress-nginx",
+          "description": "Values of the ingress-nginx chart 4.15.1 (https://kubernetes.github.io/ingress-nginx), for example controller.image, controller.resources, controller.nodeSelector, controller.tolerations, controller.podAnnotations, controller.config. Refused: fullnameOverride, nameOverride, namespaceOverride, controller.ingressClass, controller.ingressClassResource.enabled/name/controllerValue, controller.scope, controller.extraArgs enable-ssl-passthrough/ingress-class/controller-class/watch-namespace/watch-namespace-selector, controller.allowSnippetAnnotations, controller.config allow-snippet-annotations/annotations-risk-level, controller.admissionWebhooks.enabled, controller.service.enabled/type/nodePorts.http/nodePorts.https/loadBalancerIP and the metallb.universe.tf/ annotations, controller.hostNetwork, controller.hostPort.enabled, controller.autoscaling.enabled, defaultBackend.autoscaling.enabled, rbac.create, serviceAccount.create.",
+          "default": {},
+          "x-ui-widget": "yaml",
+          "x-ui-order": 1,
+          "allOf": [
+            {
+              "$ref": "#/definitions/noTemplate"
+            }
+          ]
+        }
+      }
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "definitions": {
+    "noTemplate": {
+      "description": "No key or string value, at any depth, contains '{{': upstream charts pass some values to tpl.",
+      "not": {
+        "type": "string",
+        "pattern": "\\{\\{"
+      },
+      "propertyNames": {
+        "not": {
+          "pattern": "\\{\\{"
+        }
+      },
+      "additionalProperties": {
+        "$ref": "#/definitions/noTemplate"
+      },
+      "items": {
+        "$ref": "#/definitions/noTemplate"
+      }
+    }
+  }
 }

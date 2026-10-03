@@ -24,6 +24,31 @@ an empty answer) and the root zone sent to `forward`, with `cache`. Queries are 
 
 Platform values read: `global.okdp.ingress.suffix` (required).
 
+## Upstream values
+
+Any value of the vendored `coredns` chart can be set per instance under
+`upstream.coredns`, merged over the values computed from the parameters
+(okdp-lib-chart `okdp.vendor.render`, option `upstream`):
+
+```yaml
+upstream:
+  coredns:
+    image: {repository: mirror.example.org/coredns/coredns}
+    tolerations: [{key: dedicated, operator: Exists, effect: NoSchedule}]
+    servers:                     # appended to the two computed server blocks
+      - zones: [{zone: corp.example., use_tcp: true}]
+        port: 53
+        plugins: [{name: forward, parameters: . 10.0.0.53}]
+```
+
+The paths the platform relies on are refused (names, the Deployment selector,
+the NodePort Service, the ConfigMap of the computed server blocks,
+`isClusterService`, `rbac.create`, `hpa.enabled`), and `servers` is appended to
+rather than replaced: see `dns-server.upstream.options` in
+`templates/_values.tpl` (also listed in the schema description). An upstream
+value wins over the parameter it overlaps (`resources`). No key or value may
+contain `{{` (the schema and okdp-lib-chart both refuse it).
+
 ## Changes from the KuboCD package
 
 - CoreDNS (official chart and image) replaces dnsmasq (the personal image

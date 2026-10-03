@@ -25,6 +25,23 @@ In the sandbox it provides `creds-keycloak-db` (keys `username`, `password`), th
 of the `keycloak` database (cnpg-postgresql) and the credentials Secret of Keycloak's
 `database-server` connection, labelled `cnpg.io/reload: "true"`.
 
+## Upstream values
+
+Any value of the vendored `local-secrets-provider` chart can be set per instance under
+`upstream.local-secrets-provider`, merged over the values computed from the parameters
+(okdp-lib-chart `okdp.vendor.render`, option `upstream`):
+
+```yaml
+upstream:
+  local-secrets-provider:
+    nameOverride: secrets   # the app.kubernetes.io/name label of the Secrets
+```
+
+`fullnameOverride` and `secrets` are refused (see `local-secrets-provider.upstream` in
+`templates/_values.tpl`, also listed in the schema description): the Secrets come from
+the `secrets` parameter only, so that empty values stay refused and `labels` apply. No
+key or value may contain `{{` (the schema and okdp-lib-chart both refuse it).
+
 ## Changes from the KuboCD package
 
 - Empty values are refused (schema and chart). The upstream chart marks them

@@ -11,3 +11,11 @@ connections: {}
 #     labels: {cnpg.io/reload: "true"}   # optional; copied to the replicas
 # Values cannot be empty: nothing generates them (use ESO for generated passwords).
 secrets: []
+
+# Values of the upstream chart, merged over the ones computed from the
+# parameters above (templates/_values.tpl, local-secrets-provider.upstream):
+# any upstream value can be set except the protected ones, e.g.
+#   upstream:
+#     local-secrets-provider:
+#       nameOverride: secrets
+upstream: {}

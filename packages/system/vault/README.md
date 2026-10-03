@@ -23,6 +23,31 @@ computed in `templates/_values.tpl`.
 Platform values read: `global.okdp.ingress.suffix`, `ingress.className`,
 `certificateIssuers.selfSigned.name` (all required).
 
+## Upstream values
+
+Any value of the vendored `vault` chart can be set per instance under
+`upstream.vault`, merged over the values computed from the parameters
+(okdp-lib-chart `okdp.vendor.render`, option `upstream`):
+
+```yaml
+upstream:
+  vault:
+    server:
+      resources: {limits: {memory: 512Mi}}
+      dataStorage: {size: 20Gi}
+      tolerations: [{key: dedicated, operator: Exists, effect: NoSchedule}]
+    injector: {enabled: false}
+```
+
+The paths the platform relies on are refused: the names and the Service port
+the SecretStores reach (`fullnameOverride`, `nameOverride`,
+`server.service.port`), dev mode (`server.dev`: the `dev` parameter only), and
+the ingress host and TLS (`server.ingress.enabled`, `ingressClassName`, `hosts`,
+`tls`); see `vault.upstream` in `templates/_values.tpl` (also listed in the
+schema description). An upstream value wins over the parameter it overlaps
+(`ui.enabled` over `uiEnabled`). No key or value may contain `{{` (the schema
+and okdp-lib-chart both refuse it).
+
 ## Changes from the KuboCD package
 
 - The TLS Secret is `<release>-tls` (was `vault-tls`); objects are named after the release.

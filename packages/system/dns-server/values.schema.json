@@ -45,7 +45,52 @@
       "x-ui-group": "DNS",
       "x-ui-order": 3,
       "x-ui-advanced": true
+    },
+    "upstream": {
+      "type": "object",
+      "title": "Upstream chart values",
+      "description": "Values of the upstream chart this chart renders, merged over the values it computes: any upstream parameter can be set, except the ones the platform relies on. Maps merge, lists and scalars replace. No key or value may contain '{{'.",
+      "default": {},
+      "x-ui-group": "Upstream values",
+      "x-ui-order": 1,
+      "x-ui-advanced": true,
+      "additionalProperties": false,
+      "properties": {
+        "coredns": {
+          "type": "object",
+          "title": "coredns",
+          "description": "Values of the coredns chart 1.47.1 (https://coredns.github.io/helm), for example image, resources, nodeSelector, tolerations, zoneFiles, extra server blocks. Refused: fullnameOverride, nameOverride, deployment.enabled/skipConfig/name/selector, service.name, serviceType, isClusterService, rbac.create, hpa.enabled. Appended to the server blocks this chart computes: servers.",
+          "default": {},
+          "x-ui-widget": "yaml",
+          "x-ui-order": 1,
+          "allOf": [
+            {
+              "$ref": "#/definitions/noTemplate"
+            }
+          ]
+        }
+      }
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "definitions": {
+    "noTemplate": {
+      "description": "No key or string value, at any depth, contains '{{': upstream charts pass some values to tpl.",
+      "not": {
+        "type": "string",
+        "pattern": "\\{\\{"
+      },
+      "propertyNames": {
+        "not": {
+          "pattern": "\\{\\{"
+        }
+      },
+      "additionalProperties": {
+        "$ref": "#/definitions/noTemplate"
+      },
+      "items": {
+        "$ref": "#/definitions/noTemplate"
+      }
+    }
+  }
 }

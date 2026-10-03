@@ -234,11 +234,56 @@
       "x-ui-group": "Access",
       "x-ui-order": 3,
       "x-ui-advanced": true
+    },
+    "upstream": {
+      "type": "object",
+      "title": "Upstream chart values",
+      "description": "Values of the upstream chart this chart renders, merged over the values it computes: any upstream parameter can be set, except the ones the platform relies on. Maps merge, lists and scalars replace. No key or value may contain '{{'.",
+      "default": {},
+      "x-ui-group": "Upstream values",
+      "x-ui-order": 1,
+      "x-ui-advanced": true,
+      "additionalProperties": false,
+      "properties": {
+        "seaweedfs": {
+          "type": "object",
+          "title": "seaweedfs",
+          "description": "Values of the seaweedfs chart 4.47.0 (https://seaweedfs.github.io/seaweedfs/helm), for example image, resources, nodeSelector, tolerations, master/volume/filer/s3 settings, ingress annotations. Refused: nameOverride, fullnameOverride, master.enabled/port, volume.enabled/resizeHook, filer.enabled/port/s3, filer.ingresses.http.enabled/className/host/tls and its nginx.ingress.kubernetes.io/auth-* annotations, s3.enabled/port/enableAuth/existingConfigSecret/extraVolumes/extraVolumeMounts, s3.ingress.enabled/className/host/tls, the s3 annotation secret.reloader.stakater.com/reload, sftp, allInOne, networkPolicy.enabled, cosi. Appended to the lists this chart sets: s3.createBuckets, s3.extraArgs.",
+          "default": {},
+          "x-ui-widget": "yaml",
+          "x-ui-order": 1,
+          "allOf": [
+            {
+              "$ref": "#/definitions/noTemplate"
+            }
+          ]
+        }
+      }
     }
   },
   "required": [
     "password",
     "rootSecretKey"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "definitions": {
+    "noTemplate": {
+      "description": "No key or string value, at any depth, contains '{{': upstream charts pass some values to tpl.",
+      "not": {
+        "type": "string",
+        "pattern": "\\{\\{"
+      },
+      "propertyNames": {
+        "not": {
+          "pattern": "\\{\\{"
+        }
+      },
+      "additionalProperties": {
+        "$ref": "#/definitions/noTemplate"
+      },
+      "items": {
+        "$ref": "#/definitions/noTemplate"
+      }
+    }
+  }
 }

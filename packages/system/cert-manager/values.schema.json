@@ -141,7 +141,55 @@
           }
         }
       }
+    },
+    "upstream": {
+      "type": "object",
+      "title": "Upstream chart values",
+      "description": "Values of the upstream charts this chart renders, one object per chart, merged over the values it computes: any upstream parameter can be set, except the ones the platform relies on. Maps merge, lists and scalars replace. No key or value may contain '{{'.",
+      "default": {},
+      "x-ui-group": "Upstream values",
+      "x-ui-order": 1,
+      "x-ui-advanced": true,
+      "additionalProperties": false,
+      "properties": {
+        "cert-manager": {
+          "type": "object",
+          "title": "cert-manager",
+          "description": "Values of the cert-manager chart v1.21.2 (https://charts.jetstack.io), rendered with certManager.enabled: image, resources, replicaCount, nodeSelector, tolerations, config, featureGates, webhook/cainjector settings, ... Refused: fullnameOverride, nameOverride, namespace, clusterResourceNamespace, installCRDs, crds, cainjector.enabled, disableAutoApproval, serviceAccount.create, webhook.serviceAccount.create, cainjector.serviceAccount.create, startupapicheck jobAnnotations, rbac.annotations and serviceAccount.annotations. Appended: webhook.extraArgs, approveSignerNames.",
+          "default": {},
+          "x-ui-widget": "yaml",
+          "x-ui-order": 1,
+          "allOf": [{"$ref": "#/definitions/noTemplate"}]
+        },
+        "trust-manager": {
+          "type": "object",
+          "title": "trust-manager",
+          "description": "Values of the trust-manager chart v0.25.0 (https://charts.jetstack.io), rendered with trust.enabled (and for the Bundle CRD with certManager.enabled): image, resources, replicaCount, defaultPackage, app.logLevel, ... Refused: fullnameOverride, nameOverride, namespace, crds, app.trust.namespace, app.webhook.tls.helmCert, app.webhook.tls.approverPolicy, secretTargets, serviceAccount.create.",
+          "default": {},
+          "x-ui-widget": "yaml",
+          "x-ui-order": 2,
+          "allOf": [{"$ref": "#/definitions/noTemplate"}]
+        },
+        "cert-issuers": {
+          "type": "object",
+          "title": "cert-issuers",
+          "description": "Values of the cert-issuers chart 0.2.0 (oci://quay.io/okdp/charts/cert-issuers), rendered with issuers.enabled. Its templates read nothing besides the refused paths and global (security.podSecurityStandards is unused), so this is for later versions. Refused: fullnameOverride, nameOverride, caClusterIssuers, selfSignedClusterIssuers (set issuers.* instead), bundle (trust.bundle), replication.",
+          "default": {},
+          "x-ui-widget": "yaml",
+          "x-ui-order": 3,
+          "allOf": [{"$ref": "#/definitions/noTemplate"}]
+        }
+      }
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "definitions": {
+    "noTemplate": {
+      "description": "No key or string value, at any depth, contains '{{': upstream charts pass some values to tpl.",
+      "not": {"type": "string", "pattern": "\\{\\{"},
+      "propertyNames": {"not": {"pattern": "\\{\\{"}},
+      "additionalProperties": {"$ref": "#/definitions/noTemplate"},
+      "items": {"$ref": "#/definitions/noTemplate"}
+    }
+  }
 }

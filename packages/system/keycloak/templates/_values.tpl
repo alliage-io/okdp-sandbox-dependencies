@@ -133,3 +133,54 @@ ingress:
 {{- define "keycloak.host" -}}
 {{- printf "%s.%s" .Values.ingressHost .Values.global.okdp.ingress.suffix -}}
 {{- end -}}
+
+{{/*
+Instance-level upstream values (okdp.vendor.render option `upstream`): an
+instance sets any value of the vendored keycloakx chart under
+upstream.keycloakx in its values.yaml, over the values computed above, except
+the protected paths. Protected: what the platform relies on.
+- fullnameOverride, nameOverride, namespaceOverride: keycloak-config-cli
+  reaches <release>-http in the release namespace, the anti-affinity matches
+  app.kubernetes.io/name: keycloak.
+- command, args: production mode (kc.sh start).
+- extraEnv: a templated string carrying KC_HOSTNAME (the issuer URL), the
+  bootstrap admin from <release>-admin and the database connection, so it
+  cannot be appended to: add variables with extraEnvFrom (a ConfigMap or
+  Secret of the namespace).
+- database: KC_DB_* variables competing with the db connection (and a
+  password written into the values).
+- http.relativePath, proxy: the issuer URL (/realms/<realm> at the host root)
+  and the X-Forwarded-* headers it is built from behind the ingress.
+- cache, replicas, autoscaling.enabled: one replica with a local cache
+  (KC_CACHE=local); more replicas would not share sessions.
+- service.httpPort: keycloak-config-cli calls port 80 of <release>-http.
+- ingress.enabled/ingressClassName/rules/tls: the host every OIDC client and
+  the platform issuer (global.okdp.oidc.issuerUri) point to.
+- secrets.admin, secrets.realm: secrets.<suffix> is named <release>-<suffix>,
+  which would shadow the admin password and the realm file Secrets.
+- extraManifests: arbitrary objects of any kind and namespace.
+The wrapper sets no list an instance would extend: nothing is appended.
+*/}}
+{{- define "keycloak.upstream.keycloakx" -}}
+protect:
+  - fullnameOverride
+  - nameOverride
+  - namespaceOverride
+  - command
+  - args
+  - extraEnv
+  - database
+  - http.relativePath
+  - proxy
+  - cache
+  - replicas
+  - autoscaling.enabled
+  - service.httpPort
+  - ingress.enabled
+  - ingress.ingressClassName
+  - ingress.rules
+  - ingress.tls
+  - secrets.admin
+  - secrets.realm
+  - extraManifests
+{{- end -}}

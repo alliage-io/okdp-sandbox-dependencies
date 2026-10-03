@@ -124,3 +124,35 @@ mapping:
     client_id: ".client_id"
     client_secret: ".client_secret"
 {{- end -}}
+
+{{/*
+Instance-level upstream values (okdp-lib-chart okdp.vendor.render option
+`upstream`): an instance sets any value of the vendored chart under
+upstream.rustfs in its values.yaml, over the values computed above, except the
+protected paths.
+Protected: the names and ports the s3 connection, the provisioning Job and the
+ingresses of this chart address (<release>-svc, 9000 and 9001); the root
+identity (secret: the ESO-generated Secret the provisioning Job also reads);
+the exposure, owned by this chart's ingresses (the console host is registered
+with the identity provider): the upstream ingress and Gateway API routes; and
+extraManifests (arbitrary objects through tpl, replaced by this chart's own
+templates). Appended: the lists carrying the OIDC client Secret and the CA
+bundle, so an instance adds to them.
+*/}}
+{{- define "okdp-rustfs.upstream.rustfs" -}}
+protect:
+  - nameOverride
+  - fullnameOverride
+  - service.endpoint.port
+  - service.console.port
+  - config.rustfs.address
+  - config.rustfs.console_address
+  - secret
+  - ingress
+  - gatewayApi
+  - extraManifests
+append:
+  - extraEnv
+  - extraVolumes
+  - extraVolumeMounts
+{{- end -}}

@@ -14,3 +14,16 @@ nodePort: 30053
 forwarders:
   - 8.8.8.8
   - 8.8.4.4
+
+# Values of the vendored coredns chart, merged over the ones computed from the
+# parameters above (templates/_values.tpl, dns-server.upstream.options): any
+# upstream value can be set except the protected ones, e.g.
+#   upstream:
+#     coredns:
+#       image: {repository: mirror.example.org/coredns/coredns}
+#       tolerations: [{key: dedicated, operator: Exists, effect: NoSchedule}]
+#       servers:                     # appended to the two computed server blocks
+#         - zones: [{zone: corp.example., use_tcp: true}]
+#           port: 53
+#           plugins: [{name: forward, parameters: . 10.0.0.53}]
+upstream: {}

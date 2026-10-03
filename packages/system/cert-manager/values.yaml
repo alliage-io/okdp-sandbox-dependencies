@@ -41,3 +41,14 @@ issuers:
   # Self-signed CA issuers: {name, certificate: {commonName, organization, country,
   # validity, algorithm, size}}.
   selfSignedClusterIssuers: []
+
+# Values of the upstream charts, merged over the ones computed from the
+# parameters above (templates/_values.tpl, cert-manager.upstream.*): any
+# upstream value can be set except the protected ones, e.g.
+#   upstream:
+#     cert-manager:
+#       image: {repository: mirror.example.org/jetstack/cert-manager-controller}
+#       resources: {limits: {memory: 256Mi}}
+#     trust-manager:
+#       app: {logLevel: 2}
+upstream: {}

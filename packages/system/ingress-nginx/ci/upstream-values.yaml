@@ -1,0 +1,19 @@
+# Instance-level upstream values (upstream.ingress-nginx) over the nodePort
+# mode: stable keys of the chart only, so a vendored chart bump needs no change.
+global:
+  okdp:
+    ingress: {suffix: okdp.sandbox, className: nginx}
+mode: nodePort
+httpPort: 30080
+httpsPort: 30443
+upstream:
+  ingress-nginx:
+    controller:
+      image: {registry: mirror.example.org}
+      resources:
+        requests: {cpu: 200m, memory: 256Mi}
+      nodeSelector: {ingress-ready: "true"}
+      tolerations:
+        - {key: dedicated, operator: Exists, effect: NoSchedule}
+      podAnnotations: {example.org/team: platform}
+      config: {proxy-body-size: 64m}

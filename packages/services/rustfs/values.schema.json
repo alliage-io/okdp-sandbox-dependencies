@@ -300,6 +300,51 @@
       "x-ui-group": "Access",
       "x-ui-order": 6,
       "x-ui-advanced": true
+    },
+    "upstream": {
+      "type": "object",
+      "title": "Upstream chart values",
+      "description": "Values of the upstream chart this chart renders, merged over the values it computes: any upstream parameter can be set, except the ones the platform relies on. Maps merge, lists and scalars replace. No key or value may contain '{{'.",
+      "default": {},
+      "x-ui-group": "Upstream values",
+      "x-ui-order": 1,
+      "x-ui-advanced": true,
+      "additionalProperties": false,
+      "properties": {
+        "rustfs": {
+          "type": "object",
+          "title": "rustfs",
+          "description": "Values of the rustfs chart 1.0.0 (https://charts.rustfs.com), for example image, resources, nodeSelector, tolerations, config.rustfs.log_level. Refused: nameOverride, fullnameOverride, service.endpoint.port, service.console.port, config.rustfs.address, config.rustfs.console_address, secret, ingress, gatewayApi, extraManifests. Appended to the lists this chart sets: extraEnv, extraVolumes, extraVolumeMounts.",
+          "default": {},
+          "x-ui-widget": "yaml",
+          "x-ui-order": 1,
+          "allOf": [
+            {
+              "$ref": "#/definitions/noTemplate"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "definitions": {
+    "noTemplate": {
+      "description": "No key or string value, at any depth, contains '{{': upstream charts pass some values to tpl.",
+      "not": {
+        "type": "string",
+        "pattern": "\\{\\{"
+      },
+      "propertyNames": {
+        "not": {
+          "pattern": "\\{\\{"
+        }
+      },
+      "additionalProperties": {
+        "$ref": "#/definitions/noTemplate"
+      },
+      "items": {
+        "$ref": "#/definitions/noTemplate"
+      }
     }
   }
 }

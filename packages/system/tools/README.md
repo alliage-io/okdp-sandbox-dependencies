@@ -48,6 +48,35 @@ No controller, no CRD.
 | `protection.label` | `okdp.io/protected` | Label whose value `"true"` protects an object. |
 | `protection.crdGroups` | `cert-manager.io`, `external-secrets.io`, `postgresql.cnpg.io` | API groups whose CRDs (subgroups included) cannot be deleted. |
 
+## Upstream values
+
+Any value of the vendored `reloader` and `kubernetes-replicator` charts can be set per
+instance under `upstream.<chart>`, merged over the values computed from the parameters
+(okdp-lib-chart `okdp.vendor.render`, option `upstream`):
+
+```yaml
+upstream:
+  reloader:
+    reloader:
+      logLevel: debug
+      ignoreNamespaces: scratch
+      deployment: {resources: {limits: {memory: 128Mi}}}
+  kubernetes-replicator:
+    image: {repository: mirror.example.org/mittwald/kubernetes-replicator}
+    tolerations: [{key: dedicated, operator: Exists, effect: NoSchedule}]
+```
+
+The paths the platform relies on are refused: see `tools.reloader.upstream` and
+`tools.replicator.upstream` in `templates/_values.tpl` (also listed in the schema
+descriptions). Among them: the RBAC, ServiceAccounts and `reloader.watchGlobally` (both
+tools work across every namespace), what widens the replicator's ClusterRole
+(`grantClusterAdmin`, `serviceAccount.privileges`, the verb lists), Secret replication
+and `args` (`-allow-all` would let any namespace pull any Secret), and the integrations
+gated by `.Capabilities` (`okdp-guard-allow.yaml`). Nothing is appended: the chart sets
+no list. `global` is refused too, so the Reloader image is changed with `image`, not
+`global.imageRegistry`. No key or value may contain `{{` (the schema and
+okdp-lib-chart both refuse it).
+
 ## Changes from the KuboCD package
 
 - `namespace` is gone (it was unused): everything goes to the release namespace.

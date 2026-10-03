@@ -42,3 +42,12 @@ buckets: []
 # secretRef of the published s3 connection. Empty: none (consumers bring their own
 # identity through the grants).
 outputSecretRef: ""
+
+# Values of the upstream seaweedfs chart, merged over the ones computed from the
+# parameters above (templates/_values.tpl, seaweedfs.okdp.upstream): any
+# upstream value can be set except the protected ones, e.g.
+#   upstream:
+#     seaweedfs:
+#       volume: {resources: {limits: {memory: 1Gi}}}
+#       s3: {extraArgs: [-v=2]}
+upstream: {}

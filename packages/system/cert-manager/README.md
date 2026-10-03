@@ -40,6 +40,37 @@ platform component of its own layer (`platform/components/<NN>-<name>`, all in t
 | `issuers.selfSignedClusterIssuers` | `[]` | `{name, certificate: {commonName, organization, country, validity, algorithm, size}}` |
 | `issuers.caClusterIssuers` | `[]` | `{name, ca_crt, ca_key}` (base64 PEM) |
 
+## Upstream values
+
+Any value of the vendored `cert-manager`, `trust-manager` and `cert-issuers`
+charts can be set per instance under `upstream.<chart>`, merged over the values
+computed from the parameters (okdp-lib-chart `okdp.vendor.render`, option
+`upstream`):
+
+```yaml
+upstream:
+  cert-manager:
+    image: {repository: mirror.example.org/jetstack/cert-manager-controller}
+    tolerations: [{key: dedicated, operator: Exists, effect: NoSchedule}]
+    webhook: {extraArgs: ["--v=2"]}               # appended to the chart's extraArgs
+  trust-manager:
+    resources: {limits: {memory: 256Mi}}
+```
+
+Each layer reads the key of the charts it renders: `upstream.cert-manager` in
+`00-cert-manager`, `upstream.trust-manager` in `10-cert-issuers` (and in
+`00-cert-manager` for the Bundle CRD, of which only the CRD is kept),
+`upstream.cert-issuers` in `10-cert-issuers`.
+
+The paths the platform relies on are refused and the lists the chart sets are
+appended to rather than replaced: see `cert-manager.upstream.cert-manager`,
+`cert-manager.upstream.trust` and `cert-manager.upstream.issuers` in
+`templates/_values.tpl` (also listed in the schema descriptions). The CRDs, the
+CA Secrets' namespace, automatic approval, trust-manager's webhook certificate
+and secret targets and cert-issuers' issuers, Bundle and replication stay under
+the chart's control; set `issuers.*` and `trust.*` for those. No key or value may
+contain `{{` (the schema and okdp-lib-chart both refuse it).
+
 ## Changes from the KuboCD package
 
 - The modules `main`, `trust`, `issuers` became three components of one chart (above);

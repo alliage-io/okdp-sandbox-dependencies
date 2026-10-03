@@ -71,6 +71,29 @@ Secret), so it works from the first start. RustFS discovers the provider at star
 only: if the issuer was unreachable then, the sign-in button stays off until
 `kubectl -n <namespace> rollout restart deploy/<release>`.
 
+## Upstream values
+
+Any value of the vendored `rustfs` chart can be set per instance under
+`upstream.rustfs`, merged over the values computed from the parameters
+(okdp-lib-chart `okdp.vendor.render`, option `upstream`):
+
+```yaml
+upstream:
+  rustfs:
+    image: {rustfs: {repository: mirror.example.org/rustfs/rustfs}}
+    tolerations: [{key: dedicated, operator: Exists, effect: NoSchedule}]
+    config: {rustfs: {log_level: debug}}
+    extraEnv: [{name: EXTRA_FLAG, value: "1"}]   # appended to the chart's env
+```
+
+The paths the platform relies on are refused, and the lists carrying the OIDC
+client Secret and the CA bundle are appended to rather than replaced: see
+`okdp-rustfs.upstream.rustfs` in `templates/_values.tpl` (also listed in the
+schema description). An upstream value wins over the parameter it overlaps
+(`resources.limits.memory` over `memoryGi`). No key or value may contain `{{`
+(the schema and okdp-lib-chart both refuse it). `oidc-dcr` takes no upstream
+values.
+
 ## Provided connection
 
 The descriptor (`<release>-okdp`, `outputs.yaml`) publishes `<release>`

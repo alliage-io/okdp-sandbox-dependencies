@@ -58,3 +58,19 @@ others are re-serialised (same content, keys sorted).
 {{- end }}
 {{- end }}
 {{- end -}}
+
+{{/*
+Instance-level upstream values (okdp.vendor.render option `upstream`): an
+instance sets any value of the vendored chart under
+upstream.local-secrets-provider in its values.yaml, over the values computed
+above, except the protected paths. Protected: names, and `secrets`, the list
+computed from the `secrets` parameter (an upstream entry would skip the refusal
+of empty values, which the vendored chart marks for kubernetes-secret-generator,
+no longer shipped, and the extra labels, which addLabels applies by Secret
+name). Nothing is appended: `secrets` is the only list.
+*/}}
+{{- define "local-secrets-provider.upstream" -}}
+protect:
+  - fullnameOverride
+  - secrets
+{{- end -}}

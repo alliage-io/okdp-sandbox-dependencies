@@ -13,3 +13,13 @@ endpoint: ""
 # Node ports in nodePort mode.
 httpPort: 30080
 httpsPort: 30443
+
+# Values of the upstream ingress-nginx chart, merged over the ones computed from
+# the parameters above (templates/_values.tpl, ingress-nginx.upstream.options):
+# any upstream value can be set except the protected ones, e.g.
+#   upstream:
+#     ingress-nginx:
+#       controller:
+#         resources: {requests: {cpu: 200m, memory: 256Mi}}
+#         config: {proxy-body-size: 64m}
+upstream: {}
