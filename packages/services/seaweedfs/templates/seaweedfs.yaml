@@ -1,1 +1,1 @@
-{{ include "okdp.vendor.render" (dict "ctx" . "chart" "seaweedfs" "values" (include "seaweedfs.okdp.upstream.values" . | fromYaml) "upstream" (include "seaweedfs.okdp.upstream" . | fromYaml)) }}
+{{ include "okdp.vendor.render" (dict "ctx" . "chart" "seaweedfs" "valuesFile" "vendor-values/seaweedfs.yaml" "values" (include "seaweedfs.okdp.upstream.values" . | fromYaml) "upstream" (include "seaweedfs.okdp.upstream" . | fromYaml)) }}

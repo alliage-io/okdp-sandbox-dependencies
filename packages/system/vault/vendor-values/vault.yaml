@@ -1,0 +1,6 @@
+# Fixed values of the vendored vault chart (vendor/vault), merged over its
+# values.yaml and under the values computed by templates/_values.tpl
+# (okdp.vendor.render "valuesFile"). Plain YAML, not a template.
+server:
+  ingress:
+    enabled: true

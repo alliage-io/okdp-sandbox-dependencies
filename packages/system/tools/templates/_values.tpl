@@ -1,42 +1,14 @@
-{{/* Values of the vendored charts (the former KuboCD modules). */}}
-
-{{- define "tools.reloader.values" -}}
-reloader:
-  deployment:
-    securityContext:
-      seccompProfile:
-        type: RuntimeDefault
-    containerSecurityContext:
-      capabilities:
-        drop:
-          - ALL
-      allowPrivilegeEscalation: false
-      readOnlyRootFilesystem: true
-{{- end -}}
-
-{{- define "tools.replicator.values" -}}
-podSecurityContext:
-  seccompProfile:
-    type: RuntimeDefault
-securityContext:
-  capabilities:
-    drop:
-      - ALL
-  allowPrivilegeEscalation: false
-  readOnlyRootFilesystem: true
-  runAsNonRoot: true
-  runAsUser: 1000
-livenessProbe:
-  initialDelaySeconds: 10
-readinessProbe:
-  initialDelaySeconds: 10
-{{- end -}}
+{{/*
+The vendored charts (the former KuboCD modules) have only fixed values:
+vendor-values/reloader.yaml and vendor-values/kubernetes-replicator.yaml.
+*/}}
 
 {{/*
 Instance-level upstream values (okdp.vendor.render option `upstream`): an
 instance sets any value of a vendored chart under upstream.<chart> in its
-values.yaml, over the values computed above, except the protected paths.
-Nothing is appended: the values above set no list.
+values.yaml, over the fixed values (vendor-values/<chart>.yaml), except the
+protected paths. Nothing is appended: the lists of the fixed values
+(capabilities.drop) are not extended.
 
 upstream.reloader. Protected: names; the cluster-wide RBAC and ServiceAccount
 and watchGlobally (false narrows Reloader to its own namespace, while the

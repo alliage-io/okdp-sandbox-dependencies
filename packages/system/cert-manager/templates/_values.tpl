@@ -1,63 +1,35 @@
 {{/*
-Values of the vendored charts (the former KuboCD modules main, trust and issuers).
+Computed values of the vendored charts (the former KuboCD modules main, trust
+and issuers); the fixed ones are in vendor-values/<chart>.yaml. cert-manager
+(former module "main") has only fixed values (vendor-values/cert-manager.yaml).
 */}}
-
-{{/* cert-manager (former module "main"). */}}
-{{- define "cert-manager.upstream.values" -}}
-crds:
-  enabled: true
-  keep: true
-enableCertificateOwnerRef: true
-image:
-  repository: quay.io/jetstack/cert-manager-controller
-webhook:
-  extraArgs:
-    # 90 days validity instead of 7 days
-    - "--dynamic-serving-leaf-duration=2160h"
-{{- end -}}
 
 {{/* trust-manager (former module "trust"). */}}
 {{- define "cert-manager.trust.values" -}}
 crds:
   # The Bundle CRD is installed with cert-manager, one layer below.
   enabled: {{ .crdsOnly }}
-  keep: true
 app:
   trust:
     # Where the issuers' CA secrets live: this release's namespace.
     namespace: {{ .ctx.Release.Namespace }}
-  webhook:
-    tls:
-      # The webhook certificate comes from cert-manager: a Helm-generated one
-      # (genCA) would change on every render.
-      helmCert:
-        enabled: false
 secretTargets:
   enabled: {{ .ctx.Values.trust.bundle.target.secret.enabled }}
   authorizedSecrets:
     - {{ .ctx.Values.trust.bundle.name }}
-image:
-  repository: quay.io/jetstack/trust-manager
 {{- end -}}
 
 {{/* cert-issuers (former module "issuers"); the Bundle is rendered by bundle.yaml. */}}
 {{- define "cert-manager.issuers.values" -}}
 caClusterIssuers: {{ .Values.issuers.caClusterIssuers | default list | toYaml | nindent 2 }}
 selfSignedClusterIssuers: {{ .Values.issuers.selfSignedClusterIssuers | default list | toYaml | nindent 2 }}
-bundle:
-  enabled: false
-# Never make the CA Secrets replicable: the upstream default (replicator,
-# allowedNamespaces ".*") lets any namespace copy the CA private key
-# (tls.key) with a replicate-from annotation. trust-manager reads the CA
-# certificates in this namespace (see bundle.yaml); nothing needs replication.
-replication:
-  enabled: false
 {{- end -}}
 
 {{/*
 Instance-level upstream values (okdp.vendor.render option `upstream`): an
 instance sets any value of a vendored chart under upstream.<chart> in its
-values.yaml, over the values computed above, except the protected paths.
+values.yaml, over the fixed (vendor-values/<chart>.yaml) and computed values,
+except the protected paths.
 
 upstream.cert-manager. Protected: names and namespaces (ClusterIssuer CA
 Secrets are read from clusterResourceNamespace, the release namespace, where
@@ -118,8 +90,9 @@ protect:
 {{/*
 upstream.cert-issuers. Protected: the issuers (the issuers.* parameters,
 also the sources of the Bundle bundle.yaml renders), its own Bundle (bundle.yaml
-renders it a layer above) and replication (forced off, see above: it would let
-any namespace copy the CA private keys).
+renders it a layer above) and replication (forced off, see
+vendor-values/cert-issuers.yaml: it would let any namespace copy the CA
+private keys).
 */}}
 {{- define "cert-manager.upstream.issuers" -}}
 protect:

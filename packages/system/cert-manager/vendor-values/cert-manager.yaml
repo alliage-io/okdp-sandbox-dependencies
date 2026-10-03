@@ -1,0 +1,13 @@
+# Fixed values of the vendored cert-manager chart (vendor/cert-manager), merged
+# over its values.yaml (okdp.vendor.render "valuesFile"). Plain YAML, not a
+# template. The former KuboCD module "main".
+crds:
+  enabled: true
+  keep: true
+enableCertificateOwnerRef: true
+image:
+  repository: quay.io/jetstack/cert-manager-controller
+webhook:
+  extraArgs:
+    # 90 days validity instead of 7 days
+    - "--dynamic-serving-leaf-duration=2160h"

@@ -1,0 +1,20 @@
+# Fixed values of the vendored coredns chart (vendor/coredns), merged over its
+# values.yaml and under the values computed by templates/_values.tpl
+# (okdp.vendor.render "valuesFile"). Plain YAML, not a template.
+# Named dns-server: the Deployment selector stays the one of the former chart.
+nameOverride: dns-server
+# Not the cluster DNS, no Kubernetes plugin, so no RBAC.
+isClusterService: false
+serviceType: NodePort
+rbac:
+  create: false
+serviceAccount:
+  create: false
+replicaCount: 1
+resources:
+  requests:
+    memory: 32Mi
+    cpu: 50m
+  limits:
+    memory: 128Mi
+    cpu: 100m

@@ -10,10 +10,10 @@ It renders the codecentric chart `keycloakx` 7.3.2
 (https://codecentric.github.io/helm-charts), vendored under `vendor/` (see `vendor.yaml`;
 its `helm test` hook is removed), running the official image
 `quay.io/keycloak/keycloak:26.7.4` in production mode (`kc.sh start`, plain HTTP behind the
-ingress, `KC_HOSTNAME` = the ingress URL, local cache, one replica). Values are computed
-in `templates/_values.tpl`, the realm file is built in `templates/_realm.tpl`, and
-`templates/config-cli.yaml` applies it with the upstream
-[keycloak-config-cli](https://github.com/adorsys/keycloak-config-cli) image
+ingress, `KC_HOSTNAME` = the ingress URL, local cache, one replica). Fixed values are in
+`vendor-values/keycloakx.yaml`, computed ones in `templates/_values.tpl`, the realm file
+is built in `templates/_realm.tpl`, and `templates/config-cli.yaml` applies it with the
+upstream [keycloak-config-cli](https://github.com/adorsys/keycloak-config-cli) image
 `quay.io/adorsys/keycloak-config-cli:6.5.1-26.5.5` (the latest release, built for
 Keycloak 26).
 

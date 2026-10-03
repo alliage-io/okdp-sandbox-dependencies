@@ -5,9 +5,10 @@ scalable distributed file system with an S3 API: the platform object store. It
 **provides** one `s3` connection; each consumer brings its own identity (a grant).
 
 It renders the chart `seaweedfs` 4.47.0 (https://seaweedfs.github.io/seaweedfs/helm, image
-`chrislusf/seaweedfs:4.47`), vendored under `vendor/` (see `vendor.yaml`), with values
-computed in `templates/_values.tpl`: master, volume, filer (UI behind basic auth) and the
-standalone S3 gateway; its bucket hook creates `buckets`. Its pre-install Secret
+`chrislusf/seaweedfs:4.47`), vendored under `vendor/` (see `vendor.yaml`), with fixed
+values in `vendor-values/seaweedfs.yaml` and computed ones in `templates/_values.tpl`:
+master, volume, filer (UI behind basic auth) and the standalone S3 gateway; its bucket
+hook creates `buckets`. Its pre-install Secret
 `templates/shared/secret-seaweedfs-db.yaml` (a random password, unused with the default
 filer store) is removed from the vendored copy.
 

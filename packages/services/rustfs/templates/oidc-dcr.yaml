@@ -1,4 +1,13 @@
 {{- /* Module oidc-dcr, enabled when the platform registers OAuth clients by DCR. */}}
 {{- if (include "okdp.oidc" . | fromYaml).dcr.enabled }}
-{{ include "okdp.vendor.oidcDcr" (dict "ctx" . "values" (include "okdp-rustfs.values.dcr" . | fromYaml)) }}
+{{- /* The policy claim rides its own scope, which the platform scopes do not carry. */}}
+{{- $scope := (include "okdp.oidc" . | fromYaml).scope }}
+{{- with .Values.oidcPolicyScope }}{{ $scope = printf "%s %s" $scope . }}{{ end }}
+{{- /* Named after what the DNS shows, not after the release. */}}
+{{ include "okdp.oidc.dcr" (dict "ctx" .
+     "clientName" (printf "%s-%s" (include "okdp-rustfs.instance" .) .Release.Namespace)
+     "redirectUris" (list (printf "https://%s/rustfs/admin/v3/oidc/callback/default" (include "okdp-rustfs.consoleHost" .)))
+     "grantTypes" (list "authorization_code" "refresh_token" "client_credentials")
+     "scope" $scope
+     "caSecret" .Values.caBundleSecret) }}
 {{- end }}

@@ -1,0 +1,11 @@
+# Fixed values of the vendored ingress-nginx chart (vendor/ingress-nginx),
+# merged over its values.yaml and under the values computed by
+# templates/_values.tpl (okdp.vendor.render "valuesFile"). Plain YAML, not a
+# template.
+controller:
+  allowSnippetAnnotations: false
+  # No --enable-ssl-passthrough: no platform Ingress uses the ssl-passthrough
+  # annotation, and passthrough lets any Ingress bypass TLS termination (and the
+  # controller's own L7 checks) for its host.
+  admissionWebhooks:
+    enabled: true

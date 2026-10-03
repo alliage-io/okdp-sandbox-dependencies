@@ -1,0 +1,13 @@
+# Fixed values of the vendored cert-issuers chart (vendor/cert-issuers),
+# merged over its values.yaml and under the values computed by
+# templates/_values.tpl (okdp.vendor.render "valuesFile"). Plain YAML, not a
+# template.
+# The Bundle is rendered by templates/bundle.yaml.
+bundle:
+  enabled: false
+# Never make the CA Secrets replicable: the upstream default (replicator,
+# allowedNamespaces ".*") lets any namespace copy the CA private key
+# (tls.key) with a replicate-from annotation. trust-manager reads the CA
+# certificates in this namespace (see bundle.yaml); nothing needs replication.
+replication:
+  enabled: false

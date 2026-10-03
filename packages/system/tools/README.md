@@ -12,7 +12,7 @@ OKDP chart of the sandbox cluster tools, plus the OKDP deletion protection:
   package flag `protected: true`).
 
 The upstream charts are vendored under `vendor/` (see `vendor.yaml`) and rendered with
-`okdp.vendor.render`, values in `templates/_values.tpl`.
+`okdp.vendor.render`, fixed values in `vendor-values/<chart>.yaml` (none are computed).
 
 ## Deletion protection
 
@@ -51,7 +51,7 @@ No controller, no CRD.
 ## Upstream values
 
 Any value of the vendored `reloader` and `kubernetes-replicator` charts can be set per
-instance under `upstream.<chart>`, merged over the values computed from the parameters
+instance under `upstream.<chart>`, merged over the fixed values (`vendor-values/<chart>.yaml`)
 (okdp-lib-chart `okdp.vendor.render`, option `upstream`):
 
 ```yaml

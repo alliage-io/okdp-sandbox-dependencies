@@ -8,7 +8,8 @@ issuers' CA certificates to every namespace.
 
 It renders three upstream charts vendored under `vendor/` (see `vendor.yaml`):
 cert-manager v1.21.2, trust-manager v0.25.0 and `oci://quay.io/okdp/charts/cert-issuers`
-0.2.0, with values computed in `templates/_values.tpl`.
+0.2.0, with fixed values in `vendor-values/<chart>.yaml` and computed ones in
+`templates/_values.tpl`.
 
 ## One chart, three platform components
 

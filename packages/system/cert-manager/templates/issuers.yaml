@@ -1,3 +1,3 @@
 {{- if .Values.issuers.enabled }}
-{{ include "okdp.vendor.render" (dict "ctx" . "chart" "cert-issuers" "values" (include "cert-manager.issuers.values" . | fromYaml) "upstream" (include "cert-manager.upstream.issuers" . | fromYaml)) }}
+{{ include "okdp.vendor.render" (dict "ctx" . "chart" "cert-issuers" "valuesFile" "vendor-values/cert-issuers.yaml" "values" (include "cert-manager.issuers.values" . | fromYaml) "upstream" (include "cert-manager.upstream.issuers" . | fromYaml)) }}
 {{- end }}

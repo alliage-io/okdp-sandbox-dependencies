@@ -1,2 +1,2 @@
 {{- /* Module main: the upstream rustfs chart, rendered with computed values. */}}
-{{ include "okdp.vendor.render" (dict "ctx" . "chart" "rustfs" "values" (include "okdp-rustfs.values.rustfs" . | fromYaml) "upstream" (include "okdp-rustfs.upstream.rustfs" . | fromYaml)) }}
+{{ include "okdp.vendor.render" (dict "ctx" . "chart" "rustfs" "valuesFile" "vendor-values/rustfs.yaml" "values" (include "okdp-rustfs.values.rustfs" . | fromYaml) "upstream" (include "okdp-rustfs.upstream.rustfs" . | fromYaml)) }}

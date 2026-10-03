@@ -1,0 +1,18 @@
+# Fixed values of the vendored kubernetes-replicator chart
+# (vendor/kubernetes-replicator), merged over its values.yaml
+# (okdp.vendor.render "valuesFile"). Plain YAML, not a template.
+podSecurityContext:
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  capabilities:
+    drop:
+      - ALL
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+livenessProbe:
+  initialDelaySeconds: 10
+readinessProbe:
+  initialDelaySeconds: 10

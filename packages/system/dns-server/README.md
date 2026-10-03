@@ -8,7 +8,8 @@ NodePort so the host resolver can use it.
 
 It renders the official CoreDNS chart `coredns` 1.47.1 (https://coredns.github.io/helm,
 CoreDNS 1.14.6, image `coredns/coredns`), vendored under `vendor/` (see `vendor.yaml`),
-with values computed in `templates/_values.tpl`: two server blocks on port 53, the
+with fixed values in `vendor-values/coredns.yaml` and computed ones in
+`templates/_values.tpl`: two server blocks on port 53, the
 ingress suffix answered by the `template` plugin (the suffix and every name under it get
 `target`, an `A` record, or `AAAA` when `target` is an IPv6 address; other record types
 an empty answer) and the root zone sent to `forward`, with `cache`. Queries are logged

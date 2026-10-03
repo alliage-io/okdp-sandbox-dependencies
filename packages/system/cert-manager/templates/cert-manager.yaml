@@ -1,5 +1,5 @@
 {{- if .Values.certManager.enabled }}
-{{ include "cert-manager.protect" (dict "enabled" .Values.protected "rendered" (include "okdp.vendor.render" (dict "ctx" . "chart" "cert-manager" "values" (include "cert-manager.upstream.values" . | fromYaml) "upstream" (include "cert-manager.upstream.cert-manager" . | fromYaml)))) }}
+{{ include "cert-manager.protect" (dict "enabled" .Values.protected "rendered" (include "okdp.vendor.render" (dict "ctx" . "chart" "cert-manager" "valuesFile" "vendor-values/cert-manager.yaml" "upstream" (include "cert-manager.upstream.cert-manager" . | fromYaml)))) }}
 {{- /* The Bundle CRD of trust-manager, so that the trust layer can create Bundles. */}}
-{{ include "cert-manager.protect" (dict "enabled" .Values.protected "rendered" (include "cert-manager.onlyKinds" (dict "kinds" (list "CustomResourceDefinition") "rendered" (include "okdp.vendor.render" (dict "ctx" . "chart" "trust-manager" "values" (include "cert-manager.trust.values" (dict "ctx" . "crdsOnly" true) | fromYaml) "upstream" (include "cert-manager.upstream.trust" . | fromYaml)))))) }}
+{{ include "cert-manager.protect" (dict "enabled" .Values.protected "rendered" (include "cert-manager.onlyKinds" (dict "kinds" (list "CustomResourceDefinition") "rendered" (include "okdp.vendor.render" (dict "ctx" . "chart" "trust-manager" "valuesFile" "vendor-values/trust-manager.yaml" "values" (include "cert-manager.trust.values" (dict "ctx" . "crdsOnly" true) | fromYaml) "upstream" (include "cert-manager.upstream.trust" . | fromYaml)))))) }}
 {{- end }}

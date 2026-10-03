@@ -30,7 +30,9 @@ Every chart follows the OKDP chart rules (shared with `platform-packages` and
 - upstream charts whose values are computed are **vendored** under `vendor/<name>/`
   (listed in `vendor.yaml`, downloaded, not committed, with
   [`scripts/vendor-charts.sh`](./scripts/vendor-charts.sh)) and rendered with
-  `okdp.vendor.render` from the library chart `okdp-lib-chart`;
+  `okdp.vendor.render` from the library chart `okdp-lib-chart`: their fixed values in
+  `vendor-values/<name>.yaml` (plain YAML, `valuesFile`), the computed ones in
+  `templates/_values.tpl`;
 - every chart renders the instance descriptor ConfigMap `<release>-okdp` (URL, usage, the
   connections it provides);
 - nothing differs between `helm install` (Flux) and `helm template` (Argo CD): no `lookup`,

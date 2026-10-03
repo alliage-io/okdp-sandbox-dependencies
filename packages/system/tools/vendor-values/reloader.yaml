@@ -1,0 +1,14 @@
+# Fixed values of the vendored reloader chart (vendor/reloader), merged over
+# its values.yaml (okdp.vendor.render "valuesFile"). Plain YAML, not a
+# template.
+reloader:
+  deployment:
+    securityContext:
+      seccompProfile:
+        type: RuntimeDefault
+    containerSecurityContext:
+      capabilities:
+        drop:
+          - ALL
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true

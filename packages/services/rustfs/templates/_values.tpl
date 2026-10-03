@@ -1,6 +1,7 @@
 {{/*
-Values of the vendored charts: the former KuboCD module `values:` templates,
-with .Context -> .Values.global.okdp and .Parameters -> .Values. The ingresses
+Computed values of the vendored rustfs chart (the fixed ones are in
+vendor-values/rustfs.yaml): the former KuboCD module `values:` template, with
+.Context -> .Values.global.okdp and .Parameters -> .Values. The ingresses
 and the provisioning job, formerly upstream extraManifests, are templates of
 this chart (ingress.yaml, provision.yaml); the OIDC provider, formerly
 registered by that job (mc admin config set), is set in the environment.
@@ -12,24 +13,15 @@ registered by that job (mc admin config set), is set in the environment.
 {{- $oidc := include "okdp-rustfs.oidc" . | fromYaml -}}
 nameOverride: {{ .Release.Name }}
 fullnameOverride: {{ .Release.Name }}
-# Single node (standalone).
-mode:
-  standalone:
-    enabled: true
-  distributed:
-    enabled: false
-replicaCount: 1
 resources:
   requests:
     cpu: {{ .Values.cpu | quote }}
-    memory: 512Mi
   limits:
     cpu: {{ mulf (float64 .Values.cpu) 2 | quote }}
     memory: {{ printf "%vGi" .Values.memoryGi | quote }}
 storageclass:
   name: {{ .Values.global.okdp.storageClass.data | quote }}
   dataStorageSize: {{ .Values.dataStorage | quote }}
-  logStorageSize: 256Mi
 secret:
 {{- if .Values.rootSecretKey }}
   rustfs:
@@ -85,44 +77,6 @@ extraVolumeMounts:
   - name: cacerts
     mountPath: /cacerts
 {{- end }}
-# The upstream ingress targets the console port only: both ingresses (S3 API
-# and console) are templates of this chart.
-ingress:
-  enabled: false
-{{- end -}}
-
-{{/* Module oidc-dcr: registers the OAuth client by anonymous Dynamic Client Registration. */}}
-{{- define "okdp-rustfs.values.dcr" -}}
-{{- $oidc := include "okdp.oidc" . | fromYaml -}}
-{{- if ne ($oidc.dcr.authMethod | default "") "anonymous" -}}
-  {{- fail (printf "rustfs: global.okdp.oidc.dcr.authMethod %q is not supported: this chart registers anonymously" ($oidc.dcr.authMethod | default "")) -}}
-{{- end -}}
-{{- include "okdp.require" (dict "ctx" . "keys" (list "oidc.dcr.registrationUrl")) -}}
-{{- /* The policy claim rides its own scope, which the platform scopes do not carry. */ -}}
-{{- $scope := $oidc.scope -}}
-{{- with .Values.oidcPolicyScope }}{{ $scope = printf "%s %s" $scope . }}{{ end -}}
-ttl_seconds: 30
-registration_url: {{ $oidc.dcr.registrationUrl | quote }}
-request:
-  application_type: web
-  # Named after what the DNS shows, not after the release.
-  client_name: {{ printf "%s-%s" (include "okdp-rustfs.instance" .) .Release.Namespace | quote }}
-  redirect_uris:
-    - {{ printf "https://%s/rustfs/admin/v3/oidc/callback/default" (include "okdp-rustfs.consoleHost" .) | quote }}
-  grant_types:
-    - authorization_code
-    - refresh_token
-    - client_credentials
-  scope: {{ without (splitList " " $scope) "openid" | join " " | quote }}
-tls:
-  insecure: false
-  certificate: {{ .Values.caBundleSecret | quote }}
-secret: {{ include "okdp-rustfs.dcrSecret" . }}
-mapping:
-  use_default: false
-  key_mapping:
-    client_id: ".client_id"
-    client_secret: ".client_secret"
 {{- end -}}
 
 {{/*

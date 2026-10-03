@@ -8,8 +8,8 @@ keeps everything in memory and has the well-known root token `root`: never use i
 the ingress is reachable by anyone else.
 
 It renders the upstream chart `vault` 0.34.1 (https://helm.releases.hashicorp.com; Vault
-2.0.4, vault-k8s injector 1.7.6), vendored under `vendor/` (see `vendor.yaml`), with values
-computed in `templates/_values.tpl`.
+2.0.4, vault-k8s injector 1.7.6), vendored under `vendor/` (see `vendor.yaml`), with fixed
+values in `vendor-values/vault.yaml` and computed ones in `templates/_values.tpl`.
 
 ## Parameters
 

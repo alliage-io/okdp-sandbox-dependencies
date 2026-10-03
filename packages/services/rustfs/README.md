@@ -12,8 +12,8 @@ hosts and the same connection values as seaweedfs (`ci/sandbox-values.yaml`), ex
 mutually exclusive.
 
 The former KuboCD modules are vendored upstream charts (`vendor.yaml`,
-`vendor/`) rendered by `okdp.vendor.render` with computed values
-(`templates/_values.tpl`):
+`vendor/`) rendered by `okdp.vendor.render` (fixed values in
+`vendor-values/rustfs.yaml`, computed ones in `templates/_values.tpl`):
 
 | Former module | Now | Rendered when |
 |---|---|---|

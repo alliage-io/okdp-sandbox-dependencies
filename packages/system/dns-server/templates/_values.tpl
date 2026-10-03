@@ -1,13 +1,12 @@
 {{/*
-Values of the vendored CoreDNS chart (the former KuboCD module "main", which ran
-dnsmasq with address=/<suffix>/<target> and two upstream servers).
+Computed values of the vendored CoreDNS chart (the former KuboCD module "main",
+which ran dnsmasq with address=/<suffix>/<target> and two upstream servers); the
+fixed ones are in vendor-values/coredns.yaml.
 
 Two server blocks on port 53: the ingress suffix, answered by the template
 plugin (every name under it, and the suffix itself, resolves to target; other
-record types get an empty answer), and the root zone, forwarded. Named
-dns-server (nameOverride): the Deployment selector stays the one of the former
-chart. Not the cluster DNS (isClusterService: false), no Kubernetes plugin, so
-no RBAC.
+record types get an empty answer), and the root zone, forwarded. No Kubernetes
+plugin, so no RBAC.
 */}}
 {{- define "dns-server.upstream.values" -}}
 {{- include "okdp.require" (dict "ctx" . "keys" (list "ingress.suffix")) -}}
@@ -17,21 +16,6 @@ no RBAC.
   {{- fail "dns-server: forwarders needs at least one upstream DNS server" -}}
 {{- end -}}
 fullnameOverride: {{ include "okdp.fullname" . }}
-nameOverride: dns-server
-isClusterService: false
-serviceType: NodePort
-rbac:
-  create: false
-serviceAccount:
-  create: false
-replicaCount: 1
-resources:
-  requests:
-    memory: 32Mi
-    cpu: 50m
-  limits:
-    memory: 128Mi
-    cpu: 100m
 servers:
   - zones:
       - zone: {{ printf "%s." $suffix }}

@@ -1,3 +1,3 @@
 {{- if .Values.replicator.enabled }}
-{{ include "okdp.vendor.render" (dict "ctx" . "chart" "kubernetes-replicator" "values" (include "tools.replicator.values" . | fromYaml) "upstream" (include "tools.replicator.upstream" . | fromYaml)) }}
+{{ include "okdp.vendor.render" (dict "ctx" . "chart" "kubernetes-replicator" "valuesFile" "vendor-values/kubernetes-replicator.yaml" "upstream" (include "tools.replicator.upstream" . | fromYaml)) }}
 {{- end }}

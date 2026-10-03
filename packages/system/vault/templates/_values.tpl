@@ -6,7 +6,6 @@ server:
   dev:
     enabled: {{ .Values.dev }}
   ingress:
-    enabled: true
     ingressClassName: {{ .Values.global.okdp.ingress.className }}
     annotations:
       {{- include "okdp.ingressAnnotations" . | nindent 6 }}

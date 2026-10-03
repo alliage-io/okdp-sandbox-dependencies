@@ -1,0 +1,43 @@
+# Fixed values of the vendored keycloakx chart (vendor/keycloakx), merged over
+# its values.yaml and under the values computed by templates/_values.tpl
+# (okdp.vendor.render "valuesFile"). Plain YAML, not a template.
+# Labels app.kubernetes.io/name: keycloak (the upstream chart name is keycloakx).
+nameOverride: keycloak
+# Production mode (kc.sh start): plain HTTP behind the ingress, which terminates TLS
+# and sets the X-Forwarded-* headers; the hostname fixes the issuer URL.
+command: ["/opt/keycloak/bin/kc.sh"]
+args: ["start"]
+http:
+  relativePath: /
+proxy:
+  enabled: true
+  mode: xforwarded
+  http:
+    enabled: true
+# One replica with a local cache (the upstream default is a JDBC-ping cluster).
+cache:
+  stack: custom
+# Readiness and liveness probes on the management port (9000); /metrics stays inside
+# the cluster (the ingress only serves port 8080).
+health:
+  enabled: true
+metrics:
+  enabled: true
+serviceAccount:
+  automountServiceAccountToken: false
+podSecurityContext:
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  runAsUser: 1000
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+ingress:
+  enabled: true
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
