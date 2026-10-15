@@ -1,0 +1,68 @@
+# The values of the keycloakx chart computed from the parameters, over
+# keycloakx.defaults.yaml (the former KuboCD module "main").
+keycloakx:
+  fullnameOverride: ${{ fullname }}
+  image:
+    repository: ${{ imageRepository }}
+    tag: ${{ imageTag }}
+  # Keycloak pods repel Keycloak pods only. The upstream default excludes only the
+  # component "test": it also matches the keycloak-config-cli Job pod (same name and
+  # instance labels), which then never schedules on a single node. The server pods
+  # are the only ones of the release without a component label.
+  affinity: |
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: keycloak
+              app.kubernetes.io/instance: ${{ release.name }}
+            matchExpressions:
+              - key: app.kubernetes.io/component
+                operator: DoesNotExist
+          topologyKey: kubernetes.io/hostname
+  extraEnv: |
+    - name: KC_HOSTNAME
+      value: ${{ strings.quote('https://' + host) }}
+    - name: KC_CACHE
+      value: local
+    - name: KC_BOOTSTRAP_ADMIN_USERNAME
+      value: ${{ strings.quote(str(values.adminUser)) }}
+    - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: ${{ adminSecret }}
+          key: admin-password
+    # The database-server connection: URL from its fields, credentials from its Secret.
+    - name: KC_DB
+      value: postgres
+    - name: KC_DB_URL
+      value: ${{ strings.quote('jdbc:postgresql://' + values.db.host + ':' + str(values.db.port) + '/' + values.db.dbName) }}
+    - name: KC_DB_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: ${{ values.db.secretRef.name }}
+          key: username
+    - name: KC_DB_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: ${{ values.db.secretRef.name }}
+          key: password
+  resources:
+    requests:
+      cpu: ${{ str(values.cpu * 1000.0) }}m
+      memory: ${{ str(values.memoryGi) }}Gi
+    limits:
+      cpu: ${{ str(values.cpu * 2.0) }}
+      memory: ${{ str(values.memoryGi * 2.0) }}Gi
+  ingress:
+    ingressClassName: ${{ global.okdp.ingress.className }}
+    annotations: ${{ platform.ingressAnnotations }}
+    rules:
+      - host: ${{ host }}
+        paths:
+          - path: /
+            pathType: Prefix
+    # Same Secret name as the former bitnami chart: the certificate is kept.
+    tls:
+      - hosts: ["${{ host }}"]
+        secretName: ${{ host }}-tls

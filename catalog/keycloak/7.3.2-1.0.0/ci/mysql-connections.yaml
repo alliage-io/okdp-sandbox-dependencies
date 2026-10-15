@@ -1,0 +1,8 @@
+# A MySQL database, without credentials Secret (--context 2:).
+connections:
+  my:
+    contract: database-server
+    engine: mysql
+    host: mysql.example.test
+    port: 3306
+    dbName: iam

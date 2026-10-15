@@ -1,0 +1,10 @@
+# The instance's own connections (--context 2:): another database.
+connections:
+  pg:
+    contract: database-server
+    engine: postgresql
+    host: pg.example.test
+    port: 5433
+    dbName: iam
+    sslMode: require
+    secretRef: {name: iam-db}

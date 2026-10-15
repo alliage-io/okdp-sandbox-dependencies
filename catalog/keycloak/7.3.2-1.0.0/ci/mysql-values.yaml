@@ -1,0 +1,2 @@
+# error: keycloak: db: connection "my" has engine "mysql", keycloak needs postgresql
+db: my

@@ -1,0 +1,5 @@
+# Another suffix and issuer (--context, level 0, after platform.yaml).
+global:
+  okdp:
+    ingress: {suffix: example.test}
+    certificateIssuers: {selfSigned: {name: corp-issuer}}

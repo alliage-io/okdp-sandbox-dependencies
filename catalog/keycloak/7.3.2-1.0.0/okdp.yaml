@@ -1,0 +1,463 @@
+# OKDP's part of keycloak (okdp-compiler): the platform values it needs,
+# OKDP's defaults of its chart and what an instance may override; then the
+# mapping besides the chart's values (values.cel.yaml).
+
+roles: [identity]
+dependsOn: [external-secrets, database-server, ingress]
+require:
+  - ingress.suffix
+  - ingress.className
+  - certificateIssuers.selfSigned.name
+defaults:
+  keycloakx: keycloakx.defaults.yaml
+upstream:
+  # The instance's upstream.keycloakx. What the platform relies on:
+  # - fullnameOverride, nameOverride, namespaceOverride: keycloak-config-cli
+  #   reaches <release>-http in the release namespace, the anti-affinity matches
+  #   app.kubernetes.io/name: keycloak.
+  # - command, args: production mode (kc.sh start).
+  # - extraEnv: a templated string carrying KC_HOSTNAME (the issuer URL), the
+  #   bootstrap admin from <release>-admin and the database connection, so it
+  #   cannot be appended to: add variables with extraEnvFrom (a ConfigMap or
+  #   Secret of the namespace).
+  # - database: KC_DB_* variables competing with the db connection (and a
+  #   password written into the values).
+  # - http.relativePath, proxy: the issuer URL (/realms/<realm> at the host root)
+  #   and the X-Forwarded-* headers it is built from behind the ingress.
+  # - cache, replicas, autoscaling.enabled: one replica with a local cache
+  #   (KC_CACHE=local); more replicas would not share sessions.
+  # - service.httpPort: keycloak-config-cli calls port 80 of <release>-http.
+  # - ingress.enabled/ingressClassName/rules/tls: the host every OIDC client and
+  #   the platform issuer (global.okdp.oidc.issuerUri) point to.
+  # - secrets.admin, secrets.realm: secrets.<suffix> is named <release>-<suffix>,
+  #   which would shadow the admin password and the realm file Secrets.
+  # - extraManifests: arbitrary objects of any kind and namespace.
+  # The mapping sets no list an instance would extend: nothing is appended.
+  keycloakx:
+    protect: [fullnameOverride, nameOverride, namespaceOverride, command, args, extraEnv,
+              database, http.relativePath, proxy, cache, replicas, autoscaling.enabled,
+              service.httpPort, ingress.enabled, ingress.ingressClassName, ingress.rules,
+              ingress.tls, secrets.admin, secrets.realm, extraManifests]
+
+# The mapping of keycloak: the values of the keycloakx chart (the former
+# KuboCD module "main") are in values.cel.yaml, its fixed values in
+# keycloakx.defaults.yaml; OKDP's own objects (the admin password Secret, the
+# realm file and the keycloak-config-cli hook Job applying it) and
+# okdp.instance.yaml below.
+# ${{ ... }} is a CEL expression; ${suffix}, ${username} and the shell
+# variables of the scripts stay literal. labels is the context's.
+vars:
+  fullname: ${{ okdpFullname() }}
+  adminSecret: ${{ okdpFullname('admin') }}
+  realmSecret: ${{ okdpFullname('realm') }}
+  suffix: ${{ global.okdp.ingress.suffix }}
+  host: ${{ values.ingressHost }}.${{ suffix }}
+  # Images: the official Keycloak image, and keycloak-config-cli built for Keycloak 26.
+  imageRepository: quay.io/keycloak/keycloak
+  imageTag: "26.7.4"
+  image: ${{ imageRepository }}:${{ imageTag }}
+  configCliImage: quay.io/adorsys/keycloak-config-cli:6.5.1-26.5.5
+  # keycloak-config-cli and the dcr-policies init container reach Keycloak here.
+  keycloakUrl: http://${{ fullname }}-http.${{ release.namespace }}.svc.cluster.local/
+  configCliLabels: ${{ okdpLabels('keycloak-config-cli') }}
+
+  # Anonymous dynamic client registration (anonymousDCR).
+  dcr: ${{ values.?anonymousDCR.orValue({}) }}
+  dcrEnabled: ${{ dcr.?enabled.orValue(false) == true }}
+  # anonymousDCR.fullScopeAllowed, default true.
+  fullScopeAllowed: ${{ str(dcr.?fullScopeAllowed.orValue(true)) == 'true' }}
+  # The providers of Keycloak's anonymous client registration policies the
+  # keycloak-config-cli Job removes (space separated, empty when none):
+  # consent-required unless anonymousDCR.consentRequired, scope (Full Scope
+  # Disabled) when anonymousDCR.fullScopeAllowed. Only with anonymousDCR.enabled.
+  removedPolicies: >-
+    ${{ !dcrEnabled ? '' : ((dcr.?consentRequired.orValue(false) == true ? [] : ['consent-required'])
+        + (fullScopeAllowed ? ['scope'] : [])).join(' ') }}
+
+  # The realm file keycloak-config-cli applies (the former inline master.json
+  # template), built as data below and serialised with toPrettyJson
+  # (realmJson), so values need no JSON escaping. In redirectUris, webOrigins
+  # and trustedHosts, ${suffix} is replaced by the ingress suffix.
+  users:
+    - $for: u in values.?users.orValue([])
+      $each:
+        username: ${{ u.username }}
+        enabled: true
+        emailVerified: true
+        email: ${{ u.?email.orValue('') }}
+        firstName: ${{ u.?firstName.orValue('') }}
+        lastName: ${{ u.?lastName.orValue('') }}
+        realmRoles: ${{ u.?roles.orValue([]) }}
+        credentials:
+          $if: ${{ u.?password.orValue('') != '' }}
+          $value: [{type: password, value: "${{ u.password }}"}]
+        serviceAccountClientId:
+          $if: ${{ u.?serviceAccountClientId.orValue('') != '' }}
+          $value: ${{ u.serviceAccountClientId }}
+        clientRoles:
+          $if: ${{ size(u.?clientRoles.orValue({})) > 0 }}
+          $value: ${{ u.clientRoles }}
+        groups:
+          $if: ${{ size(u.?groups.orValue([])) > 0 }}
+          $value: ${{ u.groups.map(g, '/' + g) }}
+  groups:
+    - $for: g in values.?groups.orValue([])
+      $each: {name: "${{ g.name }}"}
+  roles:
+    - $for: r in values.?roles.orValue([])
+      $each: {name: "${{ r.name }}"}
+  clients:
+    - $for: c in values.?clients.orValue([])
+      $each:
+        clientId: ${{ c.clientId }}
+        name: ${{ c.?name.orValue('') }}
+        publicClient:
+          $if: ${{ c.?publicClient.orValue(false) == true }}
+          $value: true
+        secret:
+          $if: ${{ c.?publicClient.orValue(false) != true }}
+          $value: ${{ c.?secret.orValue('') }}
+        redirectUris: >-
+          ${{ c.?redirectUris.orValue([]).map(x, x.replace('${suffix}', suffix)) }}
+        webOrigins: >-
+          ${{ c.?webOrigins.orValue([]).map(x, x.replace('${suffix}', suffix)) }}
+        defaultClientScopes:
+          $if: ${{ size(c.?defaultClientScopes.orValue([])) > 0 }}
+          $value: ${{ c.defaultClientScopes }}
+        optionalClientScopes:
+          $if: ${{ size(c.?optionalClientScopes.orValue([])) > 0 }}
+          $value: ${{ c.optionalClientScopes }}
+        serviceAccountsEnabled:
+          $if: ${{ c.?serviceAccountsEnabled.orValue(false) == true }}
+          $value: true
+        attributes:
+          $if: ${{ size(c.?attributes.orValue({})) > 0 }}
+          $value: ${{ c.attributes }}
+        # The flows: written when the client sets them, even false.
+        standardFlowEnabled:
+          $if: ${{ has(c.standardFlowEnabled) }}
+          $value: ${{ c.standardFlowEnabled }}
+        implicitFlowEnabled:
+          $if: ${{ has(c.implicitFlowEnabled) }}
+          $value: ${{ c.implicitFlowEnabled }}
+        directAccessGrantsEnabled:
+          $if: ${{ has(c.directAccessGrantsEnabled) }}
+          $value: ${{ c.directAccessGrantsEnabled }}
+  # Client scopes: attribute and mapper config values are strings.
+  clientScopes:
+    - $for: s in values.?clientScopes.orValue([])
+      $each:
+        id: ${{ s.name }}-scope-id
+        name: ${{ s.name }}
+        description: ${{ s.?description.orValue('') }}
+        protocol: ${{ s.?protocol.orValue('') }}
+        attributes: ${{ s.?attributes.orValue({}).transformMap(k, v, str(v)) }}
+        protocolMappers:
+          - $for: m in s.?protocolMappers.orValue([])
+            $each:
+              id: ${{ m.name }}-mapper-id
+              name: ${{ m.name }}
+              protocol: ${{ m.?protocol.orValue('') }}
+              protocolMapper: ${{ m.?protocolMapper.orValue('') }}
+              consentRequired: false
+              config: ${{ m.?config.orValue({}).transformMap(k, v, str(v)) }}
+  # The anonymous client registration policies. Off, the Trusted Hosts policy
+  # stays registered with no trusted host and the sender check on.
+  trustedHosts: >-
+    ${{ !dcrEnabled ? [] : first([dcr.?trustedHosts.orValue([]), ['*.${suffix}', '*.svc.cluster.local']])
+        .map(x, x.replace('${suffix}', suffix)) }}
+  policies:
+    - name: Trusted Hosts
+      providerId: trusted-hosts
+      subType: anonymous
+      config:
+        host-sending-registration-request-must-match:
+          - "${{ !dcrEnabled || dcr.?checkSenderHost.orValue(false) == true ? 'true' : 'false' }}"
+        client-uris-must-match: ["true"]
+        trusted-hosts: ${{ trustedHosts }}
+    - name: Allowed Client Scopes
+      providerId: allowed-client-templates
+      subType: anonymous
+      config:
+        allow-default-scopes: ["true"]
+        allowed-client-scopes: ${{ first([dcr.?allowedScopes.orValue([]), ['groups']]) }}
+    # Keycloak's own anonymous policies, when kept: declared, so the realm file says so.
+    - $if: ${{ dcrEnabled && dcr.?consentRequired.orValue(false) == true }}
+      name: Consent Required
+      providerId: consent-required
+      subType: anonymous
+      config: {}
+    - $if: ${{ dcrEnabled && !fullScopeAllowed }}
+      name: Full Scope Disabled
+      providerId: scope
+      subType: anonymous
+      config: {}
+  # The user profile (applied by keycloak-config-cli when the realm attribute
+  # userProfileEnabled is set): Keycloak 26's default attributes, as Keycloak
+  # creates them (email, firstName and lastName are required for users except
+  # in the master realm: its admin has none, and would be locked out), then the
+  # declared ones (admin only by default), and the unmanaged attribute policy.
+  # Always rendered, so the realm file is the whole profile.
+  userProfile: ${{ values.realm.?userProfile.orValue({}) }}
+  anyone: {view: [admin, user], edit: [admin, user]}
+  profile:
+    attributes:
+      - name: username
+        displayName: ${username}
+        multivalued: false
+        permissions: ${{ anyone }}
+        validations:
+          length: {min: 3, max: 255}
+          username-prohibited-characters: {}
+          up-username-not-idn-homograph: {}
+      - name: email
+        displayName: ${email}
+        multivalued: false
+        permissions: ${{ anyone }}
+        validations:
+          email: {}
+          length: {max: 255}
+        required: {$if: "${{ values.realm.name != 'master' }}", roles: [user]}
+      - name: firstName
+        displayName: ${firstName}
+        multivalued: false
+        permissions: ${{ anyone }}
+        validations:
+          length: {max: 255}
+          person-name-prohibited-characters: {}
+        required: {$if: "${{ values.realm.name != 'master' }}", roles: [user]}
+      - name: lastName
+        displayName: ${lastName}
+        multivalued: false
+        permissions: ${{ anyone }}
+        validations:
+          length: {max: 255}
+          person-name-prohibited-characters: {}
+        required: {$if: "${{ values.realm.name != 'master' }}", roles: [user]}
+      - $for: a in userProfile.?attributes.orValue([])
+        $each:
+          name: ${{ a.name }}
+          displayName: ${{ first([a.?displayName.orValue(''), a.name]) }}
+          multivalued: ${{ a.?multivalued.orValue(false) == true }}
+          permissions:
+            view: ${{ first([a.?permissions.?view.orValue([]), ['admin']]) }}
+            edit: ${{ first([a.?permissions.?edit.orValue([]), ['admin']]) }}
+    groups:
+      - name: user-metadata
+        displayHeader: User metadata
+        displayDescription: Attributes, which refer to user metadata
+    unmanagedAttributePolicy:
+      $if: ${{ userProfile.?unmanagedAttributePolicy.orValue('') != '' }}
+      $value: ${{ userProfile.unmanagedAttributePolicy }}
+  # Brute force detection: a temporary lockout, never a permanent one.
+  bruteForce: ${{ values.realm.?bruteForce.orValue({}) }}
+  realm:
+    realm: ${{ values.realm.name }}
+    enabled: true
+    displayName: ${{ values.realm.?displayName.orValue('') }}
+    users: ${{ users }}
+    groups: ${{ groups }}
+    roles:
+      realm: ${{ roles }}
+    clients: ${{ clients }}
+    clientScopes: ${{ clientScopes }}
+    accessTokenLifespan: ${{ first([values.realm.?accessTokenLifespan.orValue(0), 3600]) }}
+    ssoSessionIdleTimeout: ${{ first([values.realm.?ssoSessionIdleTimeout.orValue(0), 3600]) }}
+    ssoSessionMaxLifespan: ${{ first([values.realm.?ssoSessionMaxLifespan.orValue(0), 36000]) }}
+    bruteForceProtected: "${{ has(bruteForce.enabled) ? bruteForce.enabled : true }}"
+    permanentLockout: false
+    failureFactor: ${{ first([bruteForce.?failureFactor.orValue(0), 10]) }}
+    waitIncrementSeconds: ${{ first([bruteForce.?waitIncrementSeconds.orValue(0), 60]) }}
+    maxFailureWaitSeconds: ${{ first([bruteForce.?maxFailureWaitSeconds.orValue(0), 900]) }}
+    attributes: {userProfileEnabled: "true"}
+    userProfile: ${{ profile }}
+    components:
+      org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy: ${{ policies }}
+
+  realmJson: ${{ toPrettyJson(realm) }}
+
+errors:
+  # The database-server connection, checked (PostgreSQL, with a credentials
+  # Secret). The compiler resolves it (x-okdp-connection-ref); empty, it stays "".
+  - $if: ${{ type(values.db) != map }}
+    $value: "keycloak: db: no database-server connection given"
+  - $if: ${{ type(values.db) == map && values.db.engine != 'postgresql' }}
+    $value: >-
+      keycloak: db: connection ${{ strings.quote(values.db.okdp.ref) }} has engine
+      ${{ strings.quote(str(values.db.engine)) }}, keycloak needs postgresql
+  - $if: ${{ type(values.db) == map && !has(values.db.secretRef) }}
+    $value: >-
+      keycloak: db: connection ${{ strings.quote(values.db.okdp.ref) }} has no secretRef:
+      keycloak needs a Secret with the keys username and password
+
+# OKDP's own objects, rendered by the umbrella (okdp.objects.yaml).
+objects:
+  # The admin password (upstream: common.secrets.passwords.manage, lookup +
+  # random fallback). Set: written as is.
+  - $if: ${{ values.?adminPassword.orValue('') != '' }}
+    apiVersion: v1
+    kind: Secret
+    metadata:
+      name: ${{ adminSecret }}
+      labels: ${{ labels }}
+    type: Opaque
+    stringData:
+      admin-password: ${{ str(values.adminPassword) }}
+  # Empty (default): generated once in the cluster by an ESO Password
+  # generator (okdp.generatedSecret), never a well-known default.
+  - $spread: >-
+      ${{ values.?adminPassword.orValue('') == '' ? okdpGeneratedSecret({'name': adminSecret,
+          'keys': [{'key': 'admin-password', 'length': 32, 'symbols': 0}]}) : [] }}
+  # keycloak-config-cli (the upstream adorsys image) applies the realm file
+  # after every install and upgrade: a post-install/post-upgrade hook Job
+  # (Argo CD PostSync). The realm file holds client secrets and user
+  # passwords: it is a Secret, not a ConfigMap. keycloak-config-cli skips the
+  # import when the file did not change (checksum kept in the realm) and
+  # otherwise makes the realm match it, role mappings included.
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: ${{ realmSecret }}
+      labels: ${{ configCliLabels }}
+    type: Opaque
+    stringData:
+      realm.json: ${{ realmJson }}
+  - apiVersion: batch/v1
+    kind: Job
+    metadata:
+      name: ${{ okdpFullname('config-cli') }}
+      labels: ${{ configCliLabels }}
+      annotations:
+        helm.sh/hook: post-install,post-upgrade
+        helm.sh/hook-delete-policy: hook-succeeded,before-hook-creation
+        helm.sh/hook-weight: "5"
+    spec:
+      backoffLimit: 3
+      template:
+        metadata:
+          labels: ${{ configCliLabels }}
+          annotations:
+            checksum/realm: ${{ sha256(realmJson) }}
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            seccompProfile:
+              type: RuntimeDefault
+          # With anonymousDCR.enabled, an init container first removes Keycloak's
+          # own anonymous client registration policies the values turn off
+          # (removedPolicies): keycloak-config-cli only removes what it created,
+          # never these defaults.
+          initContainers:
+            $if: ${{ removedPolicies != '' }}
+            $value:
+              - name: dcr-policies
+                image: ${{ image }}
+                imagePullPolicy: IfNotPresent
+                command: ["/bin/bash", "-ec"]
+                args:
+                  - |
+                    kcadm() { /opt/keycloak/bin/kcadm.sh "$@" --config /tmp/kcadm.config; }
+                    for i in $(seq 60); do
+                      kcadm config credentials --server "$KEYCLOAK_URL" --realm master \
+                        --user "$KEYCLOAK_USER" --password "$KEYCLOAK_PASSWORD" && break
+                      [ "$i" -lt 60 ] || exit 1
+                      sleep 5
+                    done
+                    policies=$(kcadm get components -r "$REALM" \
+                      -q type=org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy \
+                      --fields id,providerId,subType --format csv --noquotes)
+                    for provider in $REMOVED_POLICIES; do
+                      for id in $(printf '%s\n' "$policies" | grep ",$provider,anonymous$" | cut -d, -f1); do
+                        echo "removing the anonymous client registration policy $provider ($id)"
+                        kcadm delete "components/$id" -r "$REALM"
+                      done
+                    done
+                env:
+                  - name: KEYCLOAK_URL
+                    value: ${{ keycloakUrl }}
+                  - name: KEYCLOAK_USER
+                    value: ${{ str(values.adminUser) }}
+                  - name: KEYCLOAK_PASSWORD
+                    valueFrom:
+                      secretKeyRef:
+                        name: ${{ adminSecret }}
+                        key: admin-password
+                  - name: REALM
+                    value: ${{ str(values.realm.name) }}
+                  - name: REMOVED_POLICIES
+                    value: ${{ removedPolicies }}
+                  - name: HOME
+                    value: /tmp
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                  capabilities:
+                    drop:
+                      - ALL
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 256Mi
+                  limits:
+                    cpu: "1"
+                    memory: 512Mi
+                volumeMounts:
+                  - name: tmp
+                    mountPath: /tmp
+          containers:
+            - name: keycloak-config-cli
+              image: ${{ configCliImage }}
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: KEYCLOAK_URL
+                  value: ${{ keycloakUrl }}
+                - name: KEYCLOAK_USER
+                  value: ${{ str(values.adminUser) }}
+                - name: KEYCLOAK_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${{ adminSecret }}
+                      key: admin-password
+                - name: KEYCLOAK_AVAILABILITYCHECK_ENABLED
+                  value: "true"
+                - name: KEYCLOAK_AVAILABILITYCHECK_TIMEOUT
+                  value: 300s
+                - name: IMPORT_FILES_LOCATIONS
+                  value: /config/*
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                requests:
+                  cpu: 250m
+                  memory: 512Mi
+                limits:
+                  cpu: "1"
+                  memory: 768Mi
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+                - name: config
+                  mountPath: /config
+                  readOnly: true
+          volumes:
+            - name: tmp
+              emptyDir: {}
+            - name: config
+              secret:
+                secretName: ${{ realmSecret }}
+
+# okdp.instance.yaml: the admin console, no provided connection (the OIDC
+# coordinates are platform values, global.okdp.oidc).
+instance:
+  url: https://${{ host }}
+  usage: |
+    Keycloak provides centralized authentication and authorization.
+    Admin console: https://${{ host }} (user `${{ values.adminUser }}`, password in the Secret `${{ adminSecret }}`).
+    Realm `${{ values.realm.name }}`, issuer https://${{ host }}/realms/${{ values.realm.name }}.

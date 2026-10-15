@@ -1,0 +1,11 @@
+# The instance's own connections (--context 2:): the database, an external
+# connection to cnpg-postgresql (database-server has no internal naming
+# convention).
+connections:
+  keycloak-db:
+    contract: database-server
+    engine: postgresql
+    host: cnpg-system-cnpg-postgresql-rw.cnpg-system.svc.cluster.local
+    port: 5432
+    dbName: keycloak
+    secretRef: {name: creds-keycloak-db}
