@@ -1,0 +1,4 @@
+# error: kubernetes-replicator: upstream.kubernetes-replicator.args: args is set by the platform and cannot be changed
+upstream:
+  kubernetes-replicator:
+    args: [-allow-all]

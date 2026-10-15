@@ -1,0 +1,25 @@
+apiVersion: v2
+name: tools
+description: >-
+  Miscellaneous Kubernetes tools: Reloader (restarts pods when their ConfigMaps or
+  Secrets change), kubernetes-replicator (copies Secrets and ConfigMaps between
+  namespaces), and the OKDP protection policy that refuses to delete objects
+  labelled okdp.io/protected=true.
+type: application
+# <upstream>-<okdp semver>: catalog/tools/<version>/, a new directory per version.
+version: 1.0.0-1.0.0
+appVersion: "1.0.0"
+home: https://okdp.io
+sources:
+  - https://github.com/OKDP/sandbox-dependencies
+  - https://github.com/stakater/Reloader
+  - https://github.com/mittwald/kubernetes-replicator
+dependencies:
+  # reloader.enabled
+  - name: reloader
+    repository: https://stakater.github.io/stakater-charts
+    version: 2.2.17
+  # replicator.enabled
+  - name: kubernetes-replicator
+    repository: https://helm.mittwald.de
+    version: 2.12.4

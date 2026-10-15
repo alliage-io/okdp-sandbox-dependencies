@@ -1,0 +1,8 @@
+# The upstream charts rendered, with OKDP's defaults alone
+# (<chart>.defaults.yaml): a chart whose $if is false is not rendered.
+# Reloader: restarts pods when their ConfigMaps or Secrets change.
+reloader:
+  $if: ${{ values.reloader.enabled }}
+# kubernetes-replicator: copies Secrets and ConfigMaps between namespaces.
+kubernetes-replicator:
+  $if: ${{ values.replicator.enabled }}

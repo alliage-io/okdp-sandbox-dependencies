@@ -1,0 +1,5 @@
+# Only the protection policy, with another label.
+reloader: {enabled: false}
+replicator: {enabled: false}
+protection:
+  label: example.org/protected

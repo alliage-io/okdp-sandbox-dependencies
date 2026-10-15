@@ -1,0 +1,190 @@
+# OKDP's part of tools (okdp-compiler): OKDP's defaults of its charts and
+# what an instance may override; then the mapping besides the charts'
+# values (values.cel.yaml). No platform value is read.
+
+roles: [tools]
+defaults:
+  reloader: reloader.defaults.yaml
+  kubernetes-replicator: kubernetes-replicator.defaults.yaml
+# An instance sets any value of a chart under upstream.<chart>, over OKDP's
+# defaults, except the protected paths (global always). Nothing is appended:
+# the lists of OKDP's defaults (capabilities.drop) are not extended.
+upstream:
+  # Reloader. Names; the cluster-wide RBAC and ServiceAccount and
+  # watchGlobally (false narrows Reloader to its own namespace, while the
+  # platform relies on it in every namespace); the integrations gated by
+  # .Capabilities.APIVersions (OpenShift, Argo Rollouts, ServiceMonitor,
+  # VPA), kept off so that helm install and helm template render the same
+  # objects; deployment.env.secret, which writes its values into a Secret
+  # (by OKDP convention values carry no secret).
+  reloader:
+    protect: [fullnameOverride, reloader.rbac.enabled, reloader.serviceAccount.create,
+              reloader.watchGlobally, reloader.isOpenshift, reloader.isArgoRollouts,
+              reloader.serviceMonitor.enabled, reloader.verticalPodAutoscaler.enabled,
+              reloader.deployment.env.secret]
+  # kubernetes-replicator. Names and namespaceOverride (everything goes to
+  # the release namespace); the ServiceAccount and ClusterRole and what
+  # widens it (grantClusterAdmin, serviceAccount.privileges, the verb
+  # lists); Secret replication, which local-secrets-provider and
+  # cert-manager rely on; args, which could pass -allow-all (any namespace
+  # could then pull any Secret with replicate-from) or override the
+  # -replicate-* flags; verticalPodAutoscaler.enabled (.Capabilities
+  # .APIVersions, kept off). The other replicationEnabled kinds stay open:
+  # turning them off only narrows the replicator.
+  kubernetes-replicator:
+    protect: [fullnameOverride, namespaceOverride, grantClusterAdmin, serviceAccount.create,
+              serviceAccount.privileges, namespacesPrivileges, replicationEnabled.secrets,
+              replicationEnabled.privileges, replicationEnabled.rolesPrivileges, args,
+              verticalPodAutoscaler.enabled]
+
+# The mapping of tools: which upstream charts are rendered (the former
+# KuboCD modules, values.cel.yaml), OKDP's own objects (the deletion
+# protection), and okdp.instance.yaml. The upstream charts have only OKDP's
+# defaults (<chart>.defaults.yaml): nothing is computed for them.
+vars:
+  protection: ${{ values.protection.enabled }}
+  # The API groups whose CRDs are protected whatever their labels.
+  crdGroups: ${{ values.protection.?crdGroups.orValue([]) }}
+
+# OKDP's own objects, rendered by the umbrella (okdp.objects.yaml).
+# Deletion protection (replaces the KuboCD package flag `protected: true`,
+# protection.enabled): a ValidatingAdmissionPolicy (Kubernetes >= 1.30, no
+# controller) refusing DELETE of the CRDs, namespaces and controllers
+# labelled <label>=true, and one refusing DELETE of the controllers whose pod
+# template carries <label>=true. Pods and ReplicaSets are left out so that
+# rollouts keep working. Helm, Flux and Argo CD cannot delete them either:
+# remove the label first.
+objects:
+  - $if: ${{ protection }}
+    apiVersion: admissionregistration.k8s.io/v1
+    kind: ValidatingAdmissionPolicy
+    metadata:
+      name: ${{ release.name }}-protected
+      labels: ${{ labels }}
+    spec:
+      failurePolicy: Fail
+      matchConstraints:
+        objectSelector:
+          matchLabels:
+            $for: k in [values.protection.label]
+            $key: ${{ k }}
+            $value: "true"
+        resourceRules:
+          - apiGroups: ["apiextensions.k8s.io"]
+            apiVersions: ["*"]
+            operations: ["DELETE"]
+            resources: ["customresourcedefinitions"]
+          - apiGroups: [""]
+            apiVersions: ["*"]
+            operations: ["DELETE"]
+            resources: ["namespaces"]
+          - apiGroups: ["apps"]
+            apiVersions: ["*"]
+            operations: ["DELETE"]
+            resources: ["deployments", "statefulsets", "daemonsets"]
+      validations:
+        - expression: "false"
+          reason: Forbidden
+          messageExpression: >-
+            oldObject.kind + ' ' + oldObject.metadata.name + ' is protected by OKDP
+            (label ${{ values.protection.label }}=true): remove the label before deleting it'
+  - $if: ${{ protection }}
+    apiVersion: admissionregistration.k8s.io/v1
+    kind: ValidatingAdmissionPolicyBinding
+    metadata:
+      name: ${{ release.name }}-protected
+      labels: ${{ labels }}
+    spec:
+      policyName: ${{ release.name }}-protected
+      validationActions: ["Deny"]
+  # The controllers (Deployment, StatefulSet, DaemonSet) whose pod template
+  # carries <label>=true: charts with no label value for the metadata of
+  # their controllers can only label the pods (vault: server.extraLabels,
+  # injector.extraLabels). objectSelector only sees the metadata labels,
+  # hence a policy of its own whose matchConditions read
+  # oldObject.spec.template.metadata.labels (each has() guards an absent
+  # field: an evaluation error would refuse the request, failurePolicy
+  # Fail). Pods and ReplicaSets carry the label too but are not matched.
+  - $if: ${{ protection }}
+    apiVersion: admissionregistration.k8s.io/v1
+    kind: ValidatingAdmissionPolicy
+    metadata:
+      name: ${{ release.name }}-protected-workloads
+      labels: ${{ labels }}
+    spec:
+      failurePolicy: Fail
+      matchConstraints:
+        resourceRules:
+          - apiGroups: ["apps"]
+            apiVersions: ["*"]
+            operations: ["DELETE"]
+            resources: ["deployments", "statefulsets", "daemonsets"]
+      matchConditions:
+        - name: pod-template-protected
+          expression: >-
+            has(oldObject.spec.template) && has(oldObject.spec.template.metadata)
+            && has(oldObject.spec.template.metadata.labels)
+            && '${{ values.protection.label }}' in oldObject.spec.template.metadata.labels
+            && oldObject.spec.template.metadata.labels['${{ values.protection.label }}'] == 'true'
+      validations:
+        - expression: "false"
+          reason: Forbidden
+          messageExpression: >-
+            oldObject.kind + ' ' + oldObject.metadata.name + ' is protected by OKDP
+            (pod template label ${{ values.protection.label }}=true): remove the label from
+            its pod template before deleting it'
+  - $if: ${{ protection }}
+    apiVersion: admissionregistration.k8s.io/v1
+    kind: ValidatingAdmissionPolicyBinding
+    metadata:
+      name: ${{ release.name }}-protected-workloads
+      labels: ${{ labels }}
+    spec:
+      policyName: ${{ release.name }}-protected-workloads
+      validationActions: ["Deny"]
+  # The CRDs of the API groups in protection.crdGroups (and their
+  # subgroups, e.g. acme.cert-manager.io), labelled or not: the upstream
+  # charts used directly from platform/components (external-secrets,
+  # cloudnative-pg) cannot label them.
+  - $for: "x in (protection && crdGroups.size() > 0 ? [release.name + '-protected-crds'] : [])"
+    $each:
+      - apiVersion: admissionregistration.k8s.io/v1
+        kind: ValidatingAdmissionPolicy
+        metadata:
+          name: ${{ x }}
+          labels: ${{ labels }}
+        spec:
+          failurePolicy: Fail
+          matchConstraints:
+            resourceRules:
+              - apiGroups: ["apiextensions.k8s.io"]
+                apiVersions: ["*"]
+                operations: ["DELETE"]
+                resources: ["customresourcedefinitions"]
+          variables:
+            - name: groups
+              expression: ${{ toJson(crdGroups) }}
+          validations:
+            - expression: >-
+                !variables.groups.exists(g, oldObject.spec.group == g || oldObject.spec.group.endsWith('.' + g))
+              reason: Forbidden
+              messageExpression: >-
+                'CustomResourceDefinition ' + oldObject.metadata.name + ' is protected by OKDP
+                (API group ' + oldObject.spec.group + '): remove it from the tools chart protection.crdGroups first'
+      - apiVersion: admissionregistration.k8s.io/v1
+        kind: ValidatingAdmissionPolicyBinding
+        metadata:
+          name: ${{ x }}
+          labels: ${{ labels }}
+        spec:
+          policyName: ${{ x }}
+          validationActions: ["Deny"]
+
+# okdp.instance.yaml: no UI, no provided connection.
+instance:
+  usage: >-
+    ${{ (['Cluster tools:']
+        + (values.reloader.enabled ? ['- Reloader: restarts pods when their ConfigMaps or Secrets change.'] : [])
+        + (values.replicator.enabled ? ['- Replicator: copies Secrets and ConfigMaps between namespaces.'] : [])
+        + (values.protection.enabled ? ['- Deletion protection: objects labelled `' + values.protection.label + '=true`, and controllers whose pods are, cannot be deleted.'] : [])
+      ).join('\n') }}
