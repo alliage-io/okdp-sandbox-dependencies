@@ -1,0 +1,4 @@
+# The platform values of every case (--context, level 0).
+global:
+  okdp:
+    ingress: {suffix: okdp.sandbox, className: nginx}

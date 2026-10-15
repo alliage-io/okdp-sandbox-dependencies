@@ -1,0 +1,5 @@
+ingressService: my-ingress-controller.ingress.svc.cluster.local
+image:
+  repository: registry.example.test/tools/kubectl
+  tag: "1.33"
+  digest: ""

@@ -1,0 +1,15 @@
+apiVersion: v2
+name: coredns-patch
+description: >-
+  CoreDNS configuration patch for local development: a Job adds a template to the
+  kube-system CoreDNS Corefile so that every name under the platform ingress suffix
+  resolves, inside the cluster, to the ingress controller Service.
+type: application
+# <upstream>-<okdp semver>: catalog/coredns-patch/<version>/, a new directory per version.
+version: 1.0.0-1.0.0
+appVersion: "1.0.0"
+home: https://okdp.io
+sources:
+  - https://github.com/OKDP/sandbox-dependencies
+# No dependency: the Job, its ServiceAccount and RBAC are OKDP's own objects
+# (okdp.yaml).

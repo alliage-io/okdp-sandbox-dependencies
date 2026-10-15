@@ -1,0 +1,146 @@
+# OKDP's part of coredns-patch (okdp-compiler): no upstream chart, no
+# dependency in Chart.yaml; the platform values it needs, then the mapping:
+# OKDP's own objects, the Job that patches the kube-system CoreDNS Corefile
+# and its ServiceAccount and RBAC (the former KuboCD module "main", the chart
+# oci://quay.io/okdp/charts/coredns-patch, taken in here). ${{ ... }} is a
+# CEL expression; CoreDNS's {{ .Name }}, and the shell and awk code of the
+# Job, stay literal. labels is the context's.
+
+roles: [coredns]
+require:
+  - ingress.suffix
+
+vars:
+  suffix: ${{ global.okdp.ingress.suffix }}
+  # The Corefile block. Every name under the suffix, the suffix itself
+  # included, is answered inside the cluster for every query type with a CNAME
+  # to the ingress controller Service (A, AAAA, ... then follow the Service),
+  # so no query of the suffix leaves the cluster (the upstream block answered
+  # A only: AAAA went to the host resolver, which may not know the suffix and
+  # time out).
+  block: |-
+    template IN ANY ${{ suffix }} {
+        match ^(.*\.)?${{ suffix.replace('.', '\\.') }}\.$
+        answer "{{ .Name }} 60 IN CNAME ${{ values.ingressService }}."
+        fallthrough
+    }
+  # The Job image: repository@digest when digest is set, else repository:tag.
+  image: ${{ values.?image.orValue({}) }}
+  imageRef: >-
+    ${{ first([image.?digest.orValue('')]) != ''
+        ? str(image.?repository.orValue('')) + '@' + str(image.digest)
+        : str(image.?repository.orValue('')) + ':' + str(image.?tag.orValue('')) }}
+
+errors:
+  - $if: ${{ first([image.?digest.orValue('')]) == '' && first([image.?tag.orValue('')]) == '' }}
+    $value: "coredns-patch: image.tag or image.digest is required"
+
+# OKDP's own objects, rendered by the umbrella (okdp.objects.yaml), all in
+# kube-system with fixed names: one instance per cluster.
+objects:
+  # The ServiceAccount of the Job and its RBAC (the former chart
+  # coredns-patch 0.2.0): the coredns ConfigMap, and rollout restart and
+  # rollout status of the CoreDNS Deployment only (kubectl lists and watches
+  # it by name).
+  - apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: coredns-config-sa
+      namespace: kube-system
+      labels: ${{ labels }}
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: Role
+    metadata:
+      name: coredns-config-role
+      namespace: kube-system
+      labels: ${{ labels }}
+    rules:
+      - apiGroups: [""]
+        resources: ["configmaps"]
+        verbs: ["get", "list", "update", "patch"]
+        resourceNames: ["coredns"]
+      - apiGroups: [""]
+        resources: ["configmaps"]
+        verbs: ["create"]
+      - apiGroups: ["apps"]
+        resources: ["deployments"]
+        verbs: ["get", "list", "patch", "watch"]
+        resourceNames: ["coredns"]
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: RoleBinding
+    metadata:
+      name: coredns-config-rolebinding
+      namespace: kube-system
+      labels: ${{ labels }}
+    subjects:
+      - kind: ServiceAccount
+        name: coredns-config-sa
+        namespace: kube-system
+    roleRef:
+      kind: Role
+      name: coredns-config-role
+      apiGroup: rbac.authorization.k8s.io
+  # The Job that patches the kube-system CoreDNS Corefile (replaces the
+  # former chart's templates/job.yaml, which answered A queries only): it
+  # removes every template block of the suffix (the former `template IN A`
+  # one included), inserts the block before the kubernetes plugin, and
+  # restarts CoreDNS only when the Corefile changed. A Job spec is
+  # immutable: its name carries a hash of the block and the image, so a new
+  # block or image runs a new Job.
+  - apiVersion: batch/v1
+    kind: Job
+    metadata:
+      name: coredns-config-job-${{ sha256(block + imageRef).substring(0, 8) }}
+      namespace: kube-system
+      labels: ${{ labels }}
+    spec:
+      template:
+        metadata:
+          labels: ${{ labels }}
+        spec:
+          serviceAccountName: coredns-config-sa
+          restartPolicy: OnFailure
+          nodeSelector:
+            kubernetes.io/os: linux
+          containers:
+            - name: kubectl
+              image: ${{ imageRef }}
+              env:
+                - name: SUFFIX
+                  value: ${{ suffix }}
+                - name: BLOCK
+                  value: ${{ block }}
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+                  current=$(kubectl -n kube-system get configmap coredns -o jsonpath='{.data.Corefile}')
+                  # Drop the template blocks of the suffix, then insert ours before kubernetes
+                  # (awk reads them from ENVIRON: -v would interpret the backslashes).
+                  new=$(printf '%s\n' "${current}" | awk '
+                    BEGIN { s = ENVIRON["SUFFIX"]; block = ENVIRON["BLOCK"] }
+                    $1 == "template" && $4 == s && $NF == "{" { skip = 1; next }
+                    skip { if ($1 == "}") skip = 0; next }
+                    /^[[:space:]]*kubernetes[[:space:]]/ && !done {
+                      match($0, /^[[:space:]]*/); ind = substr($0, 1, RLENGTH)
+                      n = split(block, lines, "\n")
+                      for (i = 1; i <= n; i++) print ind lines[i]
+                      done = 1
+                    }
+                    { print }')
+                  if [[ "${new}" == "${current}" ]]; then
+                    echo "CoreDNS already answers ${SUFFIX}"
+                    exit 0
+                  fi
+                  echo "Updating the CoreDNS template for ${SUFFIX}"
+                  kubectl -n kube-system patch configmap coredns --type merge \
+                    -p "$(jq -n --arg c "${new}"$'\n' '{data: {Corefile: $c}}')"
+                  kubectl -n kube-system rollout restart deployment coredns
+                  kubectl -n kube-system rollout status deployment coredns --timeout=300s
+                  echo "CoreDNS patched"
+
+# okdp.instance.yaml: no UI, no provided connection.
+instance:
+  usage: |
+    CoreDNS resolves every name under `${{ suffix }}` to `${{ values.ingressService }}` inside the cluster.

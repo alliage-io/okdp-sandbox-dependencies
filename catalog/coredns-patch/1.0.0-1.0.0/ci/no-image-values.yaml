@@ -1,0 +1,4 @@
+# error: coredns-patch: image.tag or image.digest is required
+image:
+  tag: ""
+  digest: ""
