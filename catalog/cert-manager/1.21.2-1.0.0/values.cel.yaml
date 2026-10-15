@@ -1,0 +1,41 @@
+# The values of the upstream charts computed from the parameters, over
+# <chart>.defaults.yaml: each layer renders the charts of its parts, a chart
+# whose $if is false is not rendered.
+#
+# protected: the CRDs and the controllers (Deployments) are labelled
+# okdp.io/protected: "true", and the ValidatingAdmissionPolicy of the tools
+# service refuses to delete them (the former KuboCD `protected: true`). The
+# charts' label values (cert-manager global.commonLabels, trust-manager
+# commonLabels) put it on every object they render: the policy only matches
+# CRDs, Namespaces, Deployments, StatefulSets and DaemonSets, so Pods and
+# ReplicaSets stay unprotected and rollouts are unaffected.
+
+# Module main: cert-manager and its CRDs (layer 00).
+cert-manager:
+  $if: ${{ values.certManager.enabled }}
+  global:
+    commonLabels:
+      $if: ${{ values.protected }}
+      okdp.io/protected: "true"
+
+# Module trust: trust-manager and its Bundle CRD (layer 10).
+trust-manager:
+  $if: ${{ values.trust.enabled }}
+  app:
+    trust:
+      # Where the issuers' CA secrets live: this release's namespace.
+      namespace: ${{ release.namespace }}
+  secretTargets:
+    enabled: ${{ bundle.target.secret.enabled }}
+    authorizedSecrets:
+      - ${{ bundle.name }}
+  commonLabels:
+    $if: ${{ values.protected }}
+    okdp.io/protected: "true"
+
+# Module issuers: cert-issuers (layer 10); its Bundle is off (OKDP's
+# defaults), the one of okdp.yaml replaces it.
+cert-issuers:
+  $if: ${{ values.issuers.enabled }}
+  caClusterIssuers: ${{ caIssuers }}
+  selfSignedClusterIssuers: ${{ selfSignedIssuers }}

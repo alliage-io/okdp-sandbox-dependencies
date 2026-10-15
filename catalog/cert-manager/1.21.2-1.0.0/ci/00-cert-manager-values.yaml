@@ -1,0 +1,3 @@
+# Layer 00: cert-manager and its CRDs (component 00-cert-manager).
+certManager:
+  enabled: true

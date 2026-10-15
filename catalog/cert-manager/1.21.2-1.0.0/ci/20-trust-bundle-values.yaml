@@ -1,0 +1,14 @@
+# Layer 20: the CA bundle (component 20-trust-bundle).
+certManager:
+  enabled: false
+protected: false
+trust:
+  bundle:
+    enabled: true
+    name: certs-bundle
+    target:
+      configMap: {enabled: true, key: root-certs.pem}
+      secret: {enabled: true}
+issuers:
+  selfSignedClusterIssuers:
+    - name: default-issuer

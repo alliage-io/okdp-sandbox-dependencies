@@ -1,0 +1,103 @@
+# OKDP's part of cert-manager (okdp-compiler): OKDP's defaults of its charts
+# and what an instance may override; then the mapping besides the charts'
+# values (values.cel.yaml). No platform value is read.
+#
+# The platform installs this service three times, one layer each (README): the
+# CRDs of one layer must exist before the objects of the next are applied.
+# Each layer renders the charts of its parts only ($if in values.cel.yaml).
+
+roles: [certManager]
+defaults:
+  cert-manager: cert-manager.defaults.yaml
+  trust-manager: trust-manager.defaults.yaml
+  cert-issuers: cert-issuers.defaults.yaml
+upstream:
+  # Module main (certManager.enabled, layer 00). Names and namespaces
+  # (ClusterIssuer CA Secrets are read from clusterResourceNamespace, the
+  # release namespace, where cert-issuers writes them), the CRDs (installed
+  # and kept here, labelled okdp.io/protected; without them every Certificate
+  # is garbage-collected), the cainjector (it injects the CA of
+  # cert-manager's and trust-manager's webhooks), automatic approval (the
+  # platform issuers' requests would never be approved), the ServiceAccounts
+  # the chart's RBAC binds, and the startupapicheck hook annotations (hooks
+  # are limited to pre/post-install/upgrade).
+  cert-manager:
+    protect: [fullnameOverride, nameOverride, namespace, clusterResourceNamespace, installCRDs,
+              crds, cainjector.enabled, disableAutoApproval, serviceAccount.create,
+              webhook.serviceAccount.create, cainjector.serviceAccount.create,
+              startupapicheck.jobAnnotations, startupapicheck.rbac.annotations,
+              startupapicheck.serviceAccount.annotations]
+    # The serving-certificate duration of OKDP's defaults, and the issuers and
+    # clusterissuers signers: an instance adds to them.
+    append: [webhook.extraArgs, approveSignerNames]
+  # Module trust (trust.enabled, layer 10). Names and namespace, the Bundle
+  # CRD (installed and kept here), app.trust.namespace (where the issuers' CA
+  # Secrets are read), the webhook certificate (helmCert runs
+  # genCA/randAlphaNum: kept off, so that helm install and helm template
+  # render the same objects; approverPolicy needs approver-policy, not
+  # installed), secretTargets (the Bundle Secret is the only Secret
+  # trust-manager may write) and its ServiceAccount.
+  trust-manager:
+    protect: [fullnameOverride, nameOverride, namespace, crds, app.trust.namespace,
+              app.webhook.tls.helmCert, app.webhook.tls.approverPolicy, secretTargets,
+              serviceAccount.create]
+  # Module issuers (issuers.enabled, layer 10). The issuers (the issuers.*
+  # parameters, also the sources of the Bundle), its own Bundle (OKDP's
+  # objects render it a layer above) and replication (forced off, see
+  # cert-issuers.defaults.yaml: it would let any namespace copy the CA private
+  # keys).
+  cert-issuers:
+    protect: [fullnameOverride, nameOverride, caClusterIssuers, selfSignedClusterIssuers,
+              bundle, replication]
+
+# The mapping of cert-manager: the values of its upstream charts (the former
+# KuboCD modules main, trust and issuers) are in values.cel.yaml, OKDP's
+# defaults in <chart>.defaults.yaml; the trust Bundle is one of OKDP's own
+# objects.
+vars:
+  caIssuers: ${{ values.issuers.?caClusterIssuers.orValue([]) }}
+  selfSignedIssuers: ${{ values.issuers.?selfSignedClusterIssuers.orValue([]) }}
+  bundle: ${{ values.trust.bundle }}
+
+# OKDP's own objects, rendered by the umbrella (okdp.objects.yaml). The CA
+# Bundle (was rendered by cert-issuers with the issuers). It is separate
+# because trust-manager's webhook validates it (failurePolicy Fail): it must
+# be applied once trust-manager runs, one layer above (layer 20). Its sources
+# are the CA secrets of the issuers listed in issuers.* (enabled or not in
+# this release).
+objects:
+  - $if: ${{ bundle.enabled && (bundle.target.configMap.enabled || bundle.target.secret.enabled) }}
+    apiVersion: trust.cert-manager.io/v1alpha1
+    kind: Bundle
+    metadata:
+      name: ${{ bundle.name }}
+      labels: ${{ labels }}
+    spec:
+      sources:
+        - useDefaultCAs: true
+        - $for: i in caIssuers + selfSignedIssuers
+          $each:
+            secret:
+              name: ${{ i.name }}
+              key: tls.crt
+      target:
+        configMap:
+          $if: ${{ bundle.target.configMap.enabled }}
+          key: ${{ bundle.target.configMap.key }}
+        secret:
+          $if: ${{ bundle.target.secret.enabled }}
+          key: ${{ bundle.target.secret.key }}
+        additionalFormats:
+          pkcs12:
+            key: bundle.p12
+        namespaceSelector:
+          matchLabels: {}
+
+# okdp.instance.yaml: no UI, no provided connection.
+instance:
+  usage: >-
+    ${{ 'cert-manager issues the TLS certificates of the platform ingresses.'
+        + (selfSignedIssuers.size() > 0
+            ? '\n\nCluster issuers: ' + selfSignedIssuers.map(x, '`' + x.name + '`').join(', ') + '.'
+            : '')
+        + (bundle.enabled ? '\n\nCA bundle `' + bundle.name + '` distributed to every namespace.' : '') }}

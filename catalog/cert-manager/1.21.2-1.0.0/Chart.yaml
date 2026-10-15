@@ -1,0 +1,29 @@
+apiVersion: v2
+name: cert-manager
+description: >-
+  cert-manager with trust-manager and the OKDP cluster issuers: certificates for the
+  platform ingresses, self-signed or CA issuers, and a CA bundle distributed to every
+  namespace. One package, installed as up to three platform components (the CRDs of a
+  layer must exist before the objects of the next one are applied).
+type: application
+# <upstream>-<okdp semver>: catalog/cert-manager/<version>/, a new directory per version.
+version: 1.21.2-1.0.0
+appVersion: "v1.21.2"
+home: https://okdp.io
+sources:
+  - https://github.com/OKDP/sandbox-dependencies
+  - https://github.com/cert-manager/cert-manager
+  - https://github.com/cert-manager/trust-manager
+dependencies:
+  # Module main (certManager.enabled, layer 00): cert-manager and its CRDs.
+  - name: cert-manager
+    repository: https://charts.jetstack.io
+    version: v1.21.2
+  # Module trust (trust.enabled, layer 10): trust-manager and its Bundle CRD.
+  - name: trust-manager
+    repository: https://charts.jetstack.io
+    version: v0.25.0
+  # Module issuers (issuers.enabled, layer 10): the ClusterIssuers.
+  - name: cert-issuers
+    repository: oci://quay.io/okdp/charts
+    version: 0.2.0
