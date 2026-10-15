@@ -1,0 +1,20 @@
+# Platform component 00-cloudnative-pg: the upstream chart, no OKDP wrapper.
+#   instance.yaml: {name: cloudnative-pg, project: cnpg-system, service: cloudnative-pg,
+#                   chart: oci://ghcr.io/cloudnative-pg/charts/cloudnative-pg,
+#                   version: "0.29.1", connections: []}
+# Former KuboCD package sandbox-dependencies/cloudnative-pg 1.29.1-1.0.1 (module main).
+# Chart 0.29.1 runs the operator 1.30.1. Its CRDs are protected by the tools chart
+# (protection.crdGroups: postgresql.cnpg.io).
+config:
+  clusterWide: true
+image:
+  repository: ghcr.io/cloudnative-pg/cloudnative-pg
+  pullPolicy: IfNotPresent
+  tag: "1.30.1"
+resources:
+  requests:
+    cpu: 500m
+    memory: 500Mi
+  limits:
+    cpu: 1
+    memory: 1Gi

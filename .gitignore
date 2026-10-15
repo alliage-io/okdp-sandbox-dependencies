@@ -47,5 +47,9 @@ local/
 *oidc-secret*.yaml
 *OIDC*
 .OIDC*
+# The *OIDC* rule above catches, on case-insensitive file systems, the
+# catalog's files named after OIDC (test cases such as ci/grants-oidc-*):
+# they hold no secret.
+!catalog/**/*oidc*
 *.bak
 *.draft
