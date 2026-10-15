@@ -45,7 +45,7 @@ Identity is Keycloak only (`20-keycloak`): `oidc.clientProvisioning` is `existin
 
 `database-server` and `s3` have no internal naming convention (in the contracts of
 [`contracts/`](../../contracts)): cnpg-postgresql and seaweedfs (or rustfs) publish their
-outputs in `okdp.instance.yaml`, beside their compiled umbrella in the deployments
+outputs in `okdp.info.yaml`, beside their compiled umbrella in the deployments
 repository. An instance of the same namespace references such an output by its name (the
 connection reference parameter), resolved to the output's values and `secretRef`, and its
 release waits for the provider's. The consumers below are in other namespaces: they

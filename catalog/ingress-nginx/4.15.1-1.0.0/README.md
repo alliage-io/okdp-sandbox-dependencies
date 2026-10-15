@@ -88,7 +88,7 @@ okdp-compiler format cannot express:
   which that ConfigMap showed.
 
 Nothing else: the ingress-nginx objects already carry `app.kubernetes.io/instance`.
-What the instance publishes (its usage) is `okdp.instance.yaml`, next to the
+What the instance publishes (its usage) is `okdp.info.yaml`, next to the
 compiled umbrella chart, no longer the descriptor ConfigMap `<release>-okdp`.
 
 ## Tests

@@ -396,7 +396,7 @@ objects:
           'keys': [{'key': 'RUSTFS_SECRET_KEY', 'length': 40, 'symbols': 0}],
           'stringData': {'RUSTFS_ACCESS_KEY': values.rootAccessKey}}) }}
 
-# okdp.instance.yaml, listed by the console: the console URL.
+# okdp.info.yaml, listed by the console: the console URL.
 instance:
   url: https://${{ consoleHost }}
   usage: |

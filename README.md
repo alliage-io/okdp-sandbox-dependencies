@@ -99,7 +99,7 @@ Every service follows the OKDP rules (shared with `platform-charts`):
 - OKDP's own objects (generated Secrets, hooks, custom resources, the RBAC and Jobs of
   OKDP's own components) are the package's `objects`: the compiled umbrella renders them
   from `okdp.objects.yaml`, as written. What an instance publishes (URL, usage, provided
-  connections) is `okdp.instance.yaml`, beside the compiled umbrella (it replaces the
+  connections) is `okdp.info.yaml`, beside the compiled umbrella (it replaces the
   descriptor ConfigMap `<release>-okdp`). An instance of the same namespace references a
   provided connection by its name and waits for its provider: an output of a contract
   without a naming convention (`s3`, `database-server`) resolves to the output, one of a

@@ -93,7 +93,7 @@ objects:
         namespaceSelector:
           matchLabels: {}
 
-# okdp.instance.yaml: no UI, no provided connection.
+# okdp.info.yaml: no UI, no provided connection.
 instance:
   usage: >-
     ${{ 'cert-manager issues the TLS certificates of the platform ingresses.'

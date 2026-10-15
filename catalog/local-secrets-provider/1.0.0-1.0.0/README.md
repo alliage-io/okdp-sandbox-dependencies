@@ -56,7 +56,7 @@ express (okdp-compiler gap list):
 
 - the values ConfigMap `<release>-local-secrets-provider-values`
   (`okdp.io/vendor-values`) is gone. What the instance publishes (its usage) is
-  `okdp.instance.yaml`, next to the compiled umbrella chart, no longer the descriptor
+  `okdp.info.yaml`, next to the compiled umbrella chart, no longer the descriptor
   ConfigMap `<release>-okdp`.
 
 ## Tests

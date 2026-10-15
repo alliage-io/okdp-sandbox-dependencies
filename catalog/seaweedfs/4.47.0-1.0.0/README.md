@@ -99,7 +99,7 @@ and okdp-compile both refuse it).
 
 ## Provided connection: `s3`
 
-One output named after the release, in `okdp.instance.yaml`:
+One output named after the release, in `okdp.info.yaml`:
 
 ```yaml
 - name: default-storage
@@ -136,7 +136,7 @@ express (okdp-compiler gap list):
 
 - the values ConfigMap `<release>-seaweedfs-values` (`okdp.io/vendor-values`) is gone:
   the compiled values replace it. What the instance publishes (its URL, usage and the
-  s3 output) is `okdp.instance.yaml`, next to the compiled umbrella chart, no longer the
+  s3 output) is `okdp.info.yaml`, next to the compiled umbrella chart, no longer the
   descriptor ConfigMap `<release>-okdp`.
 
 ## Tests

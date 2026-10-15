@@ -73,7 +73,7 @@ okdp-compiler format cannot express:
   gone: the compiled values replace it.
 
 Nothing else: the CoreDNS objects already carry `app.kubernetes.io/instance`.
-What the instance publishes (its usage) is `okdp.instance.yaml`, next to the
+What the instance publishes (its usage) is `okdp.info.yaml`, next to the
 compiled umbrella chart, no longer the descriptor ConfigMap `<release>-okdp`.
 
 ## Tests

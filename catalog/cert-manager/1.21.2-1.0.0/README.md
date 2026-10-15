@@ -132,7 +132,7 @@ can only approximate or cannot express:
   of 10-cert-issuers> --overwrite`);
 - the values ConfigMaps `<release>-<chart>-values` (`okdp.io/vendor-values`) are gone:
   the compiled values replace them. What the instance publishes (its usage) is
-  `okdp.instance.yaml`, next to the compiled umbrella chart, no longer the descriptor
+  `okdp.info.yaml`, next to the compiled umbrella chart, no longer the descriptor
   ConfigMap `<release>-okdp`.
 
 ## Tests

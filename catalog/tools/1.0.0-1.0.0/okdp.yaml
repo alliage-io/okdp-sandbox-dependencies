@@ -39,7 +39,7 @@ upstream:
 
 # The mapping of tools: which upstream charts are rendered (the former
 # KuboCD modules, values.cel.yaml), OKDP's own objects (the deletion
-# protection), and okdp.instance.yaml. The upstream charts have only OKDP's
+# protection), and okdp.info.yaml. The upstream charts have only OKDP's
 # defaults (<chart>.defaults.yaml): nothing is computed for them.
 vars:
   protection: ${{ values.protection.enabled }}
@@ -180,7 +180,7 @@ objects:
           policyName: ${{ x }}
           validationActions: ["Deny"]
 
-# okdp.instance.yaml: no UI, no provided connection.
+# okdp.info.yaml: no UI, no provided connection.
 instance:
   usage: >-
     ${{ (['Cluster tools:']

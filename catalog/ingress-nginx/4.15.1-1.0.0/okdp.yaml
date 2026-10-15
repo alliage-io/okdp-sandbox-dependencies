@@ -13,7 +13,7 @@ upstream:
   # - the IngressClass every platform chart uses (class, resource name,
   #   controller value, and the controller flags that would change them or
   #   the namespaces watched);
-  # - the exposure chosen by mode and published in okdp.instance.yaml
+  # - the exposure chosen by mode and published in okdp.info.yaml
   #   (Service on or off and its type, node ports, host networking, the
   #   metallb IP: its metallb.universe.tf/ annotation keys contain dots,
   #   written in brackets);
@@ -54,7 +54,7 @@ errors:
   - $if: ${{ values.mode == 'metallb' && first([values.?endpoint.orValue('')]) == '' }}
     $value: "ingress-nginx: endpoint is required in metallb mode"
 
-# okdp.instance.yaml: no UI, no provided connection.
+# okdp.info.yaml: no UI, no provided connection.
 instance:
   usage: |
     NGINX Ingress Controller (${{ values.mode }} mode) for the IngressClass `${{ class }}`.

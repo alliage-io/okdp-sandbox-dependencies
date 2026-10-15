@@ -43,7 +43,7 @@ upstream:
 # KuboCD module "main") are in values.cel.yaml, its fixed values in
 # keycloakx.defaults.yaml; OKDP's own objects (the admin password Secret, the
 # realm file and the keycloak-config-cli hook Job applying it) and
-# okdp.instance.yaml below.
+# okdp.info.yaml below.
 # ${{ ... }} is a CEL expression; ${suffix}, ${username} and the shell
 # variables of the scripts stay literal. labels is the context's.
 vars:
@@ -453,7 +453,7 @@ objects:
               secret:
                 secretName: ${{ realmSecret }}
 
-# okdp.instance.yaml: the admin console, no provided connection (the OIDC
+# okdp.info.yaml: the admin console, no provided connection (the OIDC
 # coordinates are platform values, global.okdp.oidc).
 instance:
   url: https://${{ host }}

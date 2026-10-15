@@ -59,7 +59,7 @@ What okdp-lib-chart did to the rendered objects and values that the
 okdp-compiler format cannot express:
 
 - the values ConfigMap `<release>-coredns-patch-values` (`okdp.io/vendor-values`) is
-  gone. What the instance publishes (its usage) is `okdp.instance.yaml`, next to the
+  gone. What the instance publishes (its usage) is `okdp.info.yaml`, next to the
   compiled umbrella chart, no longer the descriptor ConfigMap `<release>-okdp`.
 
 ## Tests

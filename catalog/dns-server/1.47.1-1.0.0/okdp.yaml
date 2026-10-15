@@ -43,7 +43,7 @@ errors:
   - $if: ${{ forwarders.size() == 0 }}
     $value: "dns-server: forwarders needs at least one upstream DNS server"
 
-# okdp.instance.yaml: no UI, no provided connection.
+# okdp.info.yaml: no UI, no provided connection.
 instance:
   usage: |
     DNS server for local development: every name under `${{ global.okdp.ingress.suffix }}` resolves to `${{ values.target }}`, other names are forwarded to ${{ forwarders.join(', ') }}.

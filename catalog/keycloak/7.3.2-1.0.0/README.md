@@ -188,7 +188,7 @@ value may contain `{{` (the schema and okdp-compile both refuse it).
 
 ## Known gaps
 
-- What the instance publishes (its URL and usage) is `okdp.instance.yaml`, next to the
+- What the instance publishes (its URL and usage) is `okdp.info.yaml`, next to the
   compiled umbrella chart, no longer the descriptor ConfigMap `<release>-okdp`.
 
 ## Tests

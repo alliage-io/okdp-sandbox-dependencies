@@ -46,7 +46,7 @@ objects:
       type: Opaque
       stringData: ${{ s.?data.orValue({}).transformMap(k, v, str(v)) }}
 
-# okdp.instance.yaml: no UI, no provided connection.
+# okdp.info.yaml: no UI, no provided connection.
 instance:
   usage: |-
     Local stand-in for a secret manager. Secrets provisioned and replicated to every namespace:${{ values.secrets.map(s, '\n- `' + s.name + '`').join('') }}

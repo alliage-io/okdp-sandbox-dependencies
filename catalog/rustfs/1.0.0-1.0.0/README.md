@@ -58,7 +58,7 @@ registration job writes `<release>-<namespace>-dcr` with the same keys.
 Endpoints (`<instance>` is the release name without its `<project>-` prefix):
 
 - S3 API: `https://<instance>-<namespace>-api.<suffix>` (or `apiHost`)
-- Console: `https://<instance>-<namespace>.<suffix>` (or `consoleHost`; the `url` of `okdp.instance.yaml`)
+- Console: `https://<instance>-<namespace>.<suffix>` (or `consoleHost`; the `url` of `okdp.info.yaml`)
 - In-cluster: `http://<release>-svc.<namespace>.svc.cluster.local:9000`
 
 Provisioning (OKDP's objects, computed by `okdp.yaml`) is a post-install/post-upgrade hook Job,
@@ -99,7 +99,7 @@ values.
 
 ## Provided connection
 
-`okdp.instance.yaml` (`provides`) publishes `<release>` (contract `s3`):
+`okdp.info.yaml` (`provides`) publishes `<release>` (contract `s3`):
 
 ```yaml
 apiUrl: https://<instance>-<namespace>-api.<suffix>
@@ -196,7 +196,7 @@ express (okdp-compiler gap list):
   the render of the rustfs chart (the okdp-lib-chart render skipped
   `templates/tests/`);
 - what the instance publishes (its URL, usage and the s3 output) is
-  `okdp.instance.yaml`, next to the compiled umbrella chart, no longer the
+  `okdp.info.yaml`, next to the compiled umbrella chart, no longer the
   descriptor ConfigMap `<release>-okdp`.
 
 ## Tests

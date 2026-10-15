@@ -90,7 +90,7 @@ objects:
                 owner: ${{ db.owner }}
                 ensure: present
 
-# okdp.instance.yaml: no UI.
+# okdp.info.yaml: no UI.
 instance:
   usage: |
     PostgreSQL cluster `${{ clusterName }}` (CloudNativePG), read-write endpoint `${{ host }}:5432`.${{ databases.size() > 0 ? '\n\n' + outputsText : '' }}

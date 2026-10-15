@@ -27,7 +27,7 @@ upstream:
 vars:
   host: ${{ values.ingressHost }}.${{ global.okdp.ingress.suffix }}
 
-# okdp.instance.yaml: the Vault UI, no provided connection.
+# okdp.info.yaml: the Vault UI, no provided connection.
 instance:
   url: https://${{ host }}
   usage: >-

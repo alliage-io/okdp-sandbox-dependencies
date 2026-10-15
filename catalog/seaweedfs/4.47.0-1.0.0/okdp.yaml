@@ -366,7 +366,7 @@ objects:
                   configMap:
                     name: ${{ x }}
 
-# okdp.instance.yaml, listed by the console: the filer UI.
+# okdp.info.yaml, listed by the console: the filer UI.
 instance:
   url: https://${{ consoleHost }}
   usage: |

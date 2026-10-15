@@ -9,7 +9,7 @@ A package in the okdp-compiler format, with no upstream chart (no dependency in
 `Chart.yaml`): `okdp.yaml` computes the `Cluster` and the `Database` objects from the
 parameters below (`config.schema.json`) as OKDP's own objects (its `objects` section,
 rendered by the compiled umbrella chart, `okdp.objects.yaml`), and the connections the
-instance publishes (`provides`, in `okdp.instance.yaml`):
+instance publishes (`provides`, in `okdp.info.yaml`):
 
 | Former module | Now | Compiled when |
 |---|---|---|
@@ -46,7 +46,7 @@ kubernetes-replicator copies the labels to the replicas.
 ## Provided connections: `database-server`
 
 For each database, an output named `<release>-<database>` (`_` becomes `-`), in
-`okdp.instance.yaml`:
+`okdp.info.yaml`:
 
 ```yaml
 - name: cnpg-system-cnpg-postgresql-keycloak
@@ -77,7 +77,7 @@ connections:
 ```
 
 The console's connection picker offers the outputs of the project's instances (their
-`okdp.instance.yaml`, no longer the descriptor ConfigMap `<release>-okdp`) and writes the
+`okdp.info.yaml`, no longer the descriptor ConfigMap `<release>-okdp`) and writes the
 name of the selected one in the parameter.
 
 ## Changes from the KuboCD package

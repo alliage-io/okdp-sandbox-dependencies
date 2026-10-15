@@ -77,7 +77,7 @@ cannot express:
   (`csi.daemonSet.extraLabels`), as before;
 - the values ConfigMap `<release>-vault-values` (`okdp.io/vendor-values`) is gone: the
   compiled values replace it. What the instance publishes (its URL and usage) is
-  `okdp.instance.yaml`, next to the compiled umbrella chart, no longer the descriptor
+  `okdp.info.yaml`, next to the compiled umbrella chart, no longer the descriptor
   ConfigMap `<release>-okdp`.
 
 ## Tests

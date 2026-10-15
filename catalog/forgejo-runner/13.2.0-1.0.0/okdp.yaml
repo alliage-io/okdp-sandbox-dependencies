@@ -215,7 +215,7 @@ objects:
             - name: chart-cache
               emptyDir: {}
 
-# okdp.instance.yaml: no UI, no provided connection.
+# okdp.info.yaml: no UI, no provided connection.
 instance:
   usage: |
     Forgejo Actions runner of ${{ values.forgejoUrl }} for OKDP's CI: the jobs `runs-on: okdp-gitops` run in its container (host executor), with `okdp-gitops` on their PATH, the topology `${{ topologyFile }}`, the git credentials of Secret `${{ values.credentialsSecret }}` (`GITOPS_CREDENTIALS_DIR=${{ credentialsDir }}`) and the chart cache `${{ chartCacheDir }}`. Its registration secret is key `${{ values.registrationSecret.key }}` of Secret `${{ values.registrationSecret.name }}`, registered on the Forgejo side with `forgejo forgejo-cli actions register --secret`.

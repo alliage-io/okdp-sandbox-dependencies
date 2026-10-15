@@ -140,7 +140,7 @@ objects:
                   kubectl -n kube-system rollout status deployment coredns --timeout=300s
                   echo "CoreDNS patched"
 
-# okdp.instance.yaml: no UI, no provided connection.
+# okdp.info.yaml: no UI, no provided connection.
 instance:
   usage: |
     CoreDNS resolves every name under `${{ suffix }}` to `${{ values.ingressService }}` inside the cluster.
