@@ -1,0 +1,11 @@
+secrets:
+  - name: creds-keycloak-db
+    labels:
+      cnpg.io/reload: "true"
+    data:
+      username: keycloak
+      password: keycloak123
+  - name: generated
+    data:
+      token: ci-token
+      port: 5432

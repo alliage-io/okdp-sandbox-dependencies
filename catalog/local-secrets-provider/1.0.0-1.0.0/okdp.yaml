@@ -1,0 +1,52 @@
+# OKDP's part of local-secrets-provider (okdp-compiler): no upstream chart,
+# no dependency in Chart.yaml, no platform value read; the mapping: one
+# Secret per entry of `secrets`, OKDP's own objects (the former KuboCD
+# module "main", the chart oci://quay.io/okdp/charts/local-secrets-provider,
+# taken in here). ${{ ... }} is a CEL expression.
+
+roles: [external-secrets]
+dependsOn: [tools]
+
+vars:
+  names: ${{ values.secrets.map(s, s.name) }}
+
+errors:
+  # An empty value is refused (the schema refuses an empty string): the
+  # former chart marked it for kubernetes-secret-generator, which OKDP no
+  # longer ships.
+  - $for: >-
+      e in values.secrets.map(s, s.?data.orValue({}).map(k, k).sort()
+        .filter(k, str(s.data[k]) == '').map(k, {'secret': s.name, 'key': k})).flatten()
+    $each: "local-secrets-provider: secrets[${{ e.secret }}].data.${{ e.key }} is empty: give a value (nothing generates it)"
+  # One Secret per name: two entries of one name would be one object twice.
+  - $for: n in names.distinct()
+    $each:
+      $if: ${{ names.filter(x, x == n).size() > 1 }}
+      $value: "local-secrets-provider: secrets: ${{ n }} is listed twice"
+
+# OKDP's own objects, rendered by the umbrella (okdp.objects.yaml): one
+# Secret per entry, its data as strings (Secret data is text), labelled with
+# OKDP's labels and the entry's `labels` (OKDP's win), and replicated to
+# every namespace by kubernetes-replicator (tools), labels included.
+objects:
+  - $for: s in values.secrets
+    $vars:
+      extra: ${{ s.?labels.orValue({}) }}
+    $each:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: ${{ s.name }}
+        labels:
+          $for: k in (labels.map(k, k) + extra.map(k, k)).distinct().sort()
+          $key: ${{ k }}
+          $value: "${{ k in labels ? labels[k] : str(extra[k]) }}"
+        annotations:
+          replicator.v1.mittwald.de/replicate-to: "*"
+      type: Opaque
+      stringData: ${{ s.?data.orValue({}).transformMap(k, v, str(v)) }}
+
+# okdp.instance.yaml: no UI, no provided connection.
+instance:
+  usage: |-
+    Local stand-in for a secret manager. Secrets provisioned and replicated to every namespace:${{ values.secrets.map(s, '\n- `' + s.name + '`').join('') }}

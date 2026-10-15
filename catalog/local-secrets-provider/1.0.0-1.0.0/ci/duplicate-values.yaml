@@ -1,0 +1,4 @@
+# error: local-secrets-provider: secrets: creds-a is listed twice
+secrets:
+  - {name: creds-a, data: {a: "1"}}
+  - {name: creds-a, data: {b: "2"}}

@@ -1,0 +1,14 @@
+apiVersion: v2
+name: local-secrets-provider
+description: >-
+  Provisions the Kubernetes Secrets the platform services need from a static list: a
+  local stand-in for an external secret manager in sandbox environments. Each Secret
+  is replicated to every namespace (kubernetes-replicator, tools chart).
+type: application
+# <upstream>-<okdp semver>: catalog/local-secrets-provider/<version>/, a new directory per version.
+version: 1.0.0-1.0.0
+appVersion: "1.0.0"
+home: https://okdp.io
+sources:
+  - https://github.com/OKDP/sandbox-dependencies
+# No dependency: the Secrets are OKDP's own objects (okdp.yaml).
