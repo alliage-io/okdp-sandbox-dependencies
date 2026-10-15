@@ -1,0 +1,7 @@
+# The platform values of every case (--context, level 0): OIDC off.
+global:
+  okdp:
+    ingress: {suffix: okdp.sandbox, className: nginx}
+    oidc: {enabled: false}
+    certificateIssuers: {selfSigned: {name: default-issuer}}
+    storageClass: {data: standard, workspace: standard}

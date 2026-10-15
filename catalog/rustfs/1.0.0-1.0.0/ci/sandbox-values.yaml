@@ -1,0 +1,7 @@
+# The sandbox store in place of seaweedfs (component 20-storage, release
+# default-storage): same hosts (storage-default[-api]), same published Secret.
+grants:
+  - principal: platformAdmin
+    credentialsSecret: {name: creds-seaweedfs-s3, accessKeyKey: accessKey, secretKeyKey: secretKey}
+    actions: [Admin]
+outputSecretRef: creds-seaweedfs-s3

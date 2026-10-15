@@ -1,0 +1,21 @@
+apiVersion: v2
+name: rustfs
+description: >-
+  RustFS, a high-performance S3-compatible object store written in Rust: a
+  single-node alternative to seaweedfs as the platform object store, with buckets,
+  S3 identities and OIDC sign-in provisioned from its parameters. Publishes one s3
+  connection.
+type: application
+# <upstream>-<okdp semver>: catalog/rustfs/<version>/, a new directory per version.
+version: 1.0.0-1.0.0
+appVersion: "1.0.0"
+home: https://okdp.io
+sources:
+  - https://github.com/OKDP/sandbox-dependencies
+  - https://github.com/rustfs/rustfs
+dependencies:
+  # The former KuboCD module main. The former module oidc-dcr is the OAuth
+  # client chart the compiler adds in dcr mode (okdp.yaml oidcClients).
+  - name: rustfs
+    repository: https://charts.rustfs.com
+    version: 1.0.0

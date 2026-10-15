@@ -1,0 +1,15 @@
+# OAuth client registered by DCR, another suffix, issuer and storage classes
+# (--context, level 0, after platform.yaml).
+global:
+  okdp:
+    ingress: {suffix: example.org}
+    oidc:
+      enabled: true
+      issuerUri: https://sso.example.org/realms/okdp
+      scope: "openid profile email groups"
+      clientProvisioning: dcr
+      dcr:
+        registrationUrl: https://sso.example.org/realms/okdp/clients-registrations/openid-connect
+        authMethod: anonymous
+    certificateIssuers: {selfSigned: {name: corp-issuer}}
+    storageClass: {data: fast, workspace: shared}

@@ -1,0 +1,4 @@
+# OIDC on without an issuer (--context, level 0, after platform.yaml).
+global:
+  okdp:
+    oidc: {enabled: true}
