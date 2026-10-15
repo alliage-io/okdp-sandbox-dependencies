@@ -1,0 +1,80 @@
+# The values of the seaweedfs chart computed from the parameters, over
+# seaweedfs.defaults.yaml (the former KuboCD module "main"): master, volume,
+# filer (UI behind basic auth) and the standalone S3 gateway; its bucket hook
+# creates `buckets`.
+seaweedfs:
+  nameOverride: ${{ release.name }}
+  fullnameOverride: ${{ release.name }}
+  global:
+    seaweedfs:
+      image:
+        name: chrislusf/seaweedfs
+      # Off (upstream default): the security ConfigMap reads the cluster
+      # with lookup.
+      enableSecurity: false
+      # Named after the release (upstream default: seaweedfs).
+      serviceAccountName: ${{ release.name }}
+  image:
+    tag: ${{ imageTag }}
+  master:
+    data:
+      storageClass: ${{ class }}
+      size: ${{ str(values.masterStorage) }}Gi
+    logs:
+      storageClass: ${{ class }}
+      size: ${{ str(values.masterLogStorage) }}Gi
+  volume:
+    replicas: ${{ values.volumeReplicas }}
+    dataDirs:
+      - name: data
+        type: persistentVolumeClaim
+        storageClass: ${{ class }}
+        size: ${{ str(values.volumeStorage) }}Gi
+        maxVolumes: 0
+  filer:
+    data:
+      storageClass: ${{ class }}
+      size: ${{ str(values.filerStorage) }}Gi
+    logs:
+      storageClass: ${{ class }}
+      size: ${{ str(values.filerLogStorage) }}Gi
+    ingresses:
+      http:
+        className: ${{ global.okdp.ingress.className }}
+        annotations:
+          $merge: ${{ platform.ingressAnnotations }}
+          nginx.ingress.kubernetes.io/auth-secret: ${{ filerAuthSecret }}
+        host: ${{ consoleHost }}
+        tls:
+          - secretName: ${{ okdpFullname('filer-tls') }}
+            hosts: ["${{ consoleHost }}"]
+  s3:
+    # Rendered by ESO from the grants' Secrets (OKDP's objects, okdp.yaml).
+    existingConfigSecret: ${{ s3ConfigSecret }}
+    # The S3 gateway reads its configuration at startup: Reloader restarts it
+    # when ESO updates a Secret (a grant added or its keys changed, the
+    # IAM/STS file changed); the checksum of the IAM/STS template rolls it
+    # on a change of the template.
+    annotations:
+      secret.reloader.stakater.com/reload: ${{ s3ConfigSecret }},${{ iamSecret }}
+    podAnnotations:
+      checksum/iam: ${{ sha256(iamTemplate) }}
+    createBuckets:
+      - $for: b in buckets
+        $each:
+          name: ${{ b.name }}
+          anonymousRead: ${{ b.?anonymousRead.orValue(false) }}
+    extraVolumes: |
+      - name: auth-config
+        secret:
+          secretName: ${{ iamSecret }}
+    extraArgs:
+      $if: ${{ stsEnabled }}
+      $value: ["-iam.config=/etc/seaweed/iam/iam.json"]
+    ingress:
+      className: ${{ global.okdp.ingress.className }}
+      annotations: ${{ platform.ingressAnnotations }}
+      host: ${{ apiHost }}
+      tls:
+        - secretName: ${{ okdpFullname('s3-tls') }}
+          hosts: ["${{ apiHost }}"]

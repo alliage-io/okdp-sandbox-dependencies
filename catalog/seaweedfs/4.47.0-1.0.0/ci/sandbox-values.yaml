@@ -1,0 +1,10 @@
+# The sandbox store (component 20-storage, release default-storage).
+password: sandbox-filer-pw
+rootSecretKey: sandbox-seaweedfs-root
+consoleHost: storage-default
+apiHost: storage-default-api
+grants:
+  - principal: platformAdmin
+    credentialsSecret: {name: creds-seaweedfs-s3, accessKeyKey: accessKey, secretKeyKey: secretKey}
+    actions: [Admin]
+outputSecretRef: creds-seaweedfs-s3

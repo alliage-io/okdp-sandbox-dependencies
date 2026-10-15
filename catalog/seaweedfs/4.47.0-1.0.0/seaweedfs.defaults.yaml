@@ -1,0 +1,48 @@
+# OKDP's defaults of the seaweedfs chart (okdp.yaml defaults), the same for
+# every instance: over the chart's values.yaml, under the values computed
+# by values.cel.yaml. Plain YAML, not a template.
+# global (the image name, enableSecurity) is set in values.cel.yaml: a
+# chart's global is the context's, under the computed one.
+master:
+  enabled: true
+  replicas: 1
+  data:
+    type: persistentVolumeClaim
+  logs:
+    type: persistentVolumeClaim
+volume:
+  enabled: true
+  # The resize hook compares the PVCs with lookup: off, resize by hand.
+  resizeHook:
+    enabled: false
+filer:
+  enabled: true
+  replicas: 1
+  enablePVC: true
+  port: 8888
+  data:
+    type: persistentVolumeClaim
+  logs:
+    type: persistentVolumeClaim
+  ingresses:
+    http:
+      enabled: true
+      annotations:
+        nginx.ingress.kubernetes.io/proxy-body-size: "130m"
+        nginx.ingress.kubernetes.io/auth-type: basic
+        nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
+      path: "/"
+      pathType: Prefix
+s3:
+  enabled: true
+  enableAuth: true
+  extraVolumeMounts: |
+    - name: auth-config
+      mountPath: /etc/seaweed/iam
+      readOnly: true
+  ingress:
+    enabled: true
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-body-size: "130m"
+    path: "/"
+    pathType: Prefix

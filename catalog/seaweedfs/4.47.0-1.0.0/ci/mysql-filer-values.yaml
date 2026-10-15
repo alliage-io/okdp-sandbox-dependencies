@@ -1,0 +1,7 @@
+# error: seaweedfs: upstream.seaweedfs.filer.extraEnvironmentVars.WEED_MYSQL_ENABLED: filer.extraEnvironmentVars.WEED_MYSQL_ENABLED is set by the platform and cannot be changed
+password: sandbox-filer-pw
+rootSecretKey: sandbox-seaweedfs-root
+upstream:
+  seaweedfs:
+    filer:
+      extraEnvironmentVars: {WEED_MYSQL_ENABLED: "true"}

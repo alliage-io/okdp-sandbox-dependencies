@@ -1,0 +1,19 @@
+apiVersion: v2
+name: seaweedfs
+description: >-
+  SeaweedFS, a simple and highly scalable distributed file system with an S3 API: the
+  platform object store. Publishes one s3 connection; each consumer brings its own
+  identity (grants), whose keys ESO collects into the S3 configuration.
+type: application
+# <upstream>-<okdp semver>: catalog/seaweedfs/<version>/, a new directory per version.
+version: 4.47.0-1.0.0
+appVersion: "4.47.0"
+home: https://okdp.io
+sources:
+  - https://github.com/OKDP/sandbox-dependencies
+  - https://github.com/seaweedfs/seaweedfs
+dependencies:
+  # The former KuboCD module main.
+  - name: seaweedfs
+    repository: https://seaweedfs.github.io/seaweedfs/helm
+    version: 4.47.0
