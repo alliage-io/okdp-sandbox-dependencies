@@ -1,0 +1,18 @@
+apiVersion: v2
+name: forgejo-runner
+description: >-
+  A Forgejo Actions runner dedicated to OKDP's CI: on every push to an input repository
+  of the deployments layout, the workflow okdp-gitops generates runs okdp-gitops compile
+  on it, which compiles the whole layout and pushes the compiled tree. Host executor
+  (label okdp-gitops:host): the jobs run in the runner container, with the okdp-gitops
+  binary, the topology, the git credentials and a chart cache.
+type: application
+# <upstream>-<okdp semver>: catalog/forgejo-runner/<version>/, a new directory per version.
+version: 13.2.0-1.0.0
+appVersion: "13.2.0"
+home: https://okdp.io
+sources:
+  - https://github.com/OKDP/sandbox-dependencies
+  - https://code.forgejo.org/forgejo/runner
+# No dependency: the runner's ConfigMap, Deployment and ServiceAccount are OKDP's own
+# objects (okdp.yaml).

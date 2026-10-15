@@ -1,0 +1,7 @@
+# The sandbox's io topology: the sources in okdp-input, the compiled tree in
+# okdp-output; everything else defaults (the sandbox's Forgejo, Secrets
+# okdp-forgejo-runner and okdp-gitops-credentials).
+topology: |
+  platform: {url: "http://forgejo-http.forgejo.svc.cluster.local:3000/okdp/okdp-input.git", branch: main, path: platform}
+  projects: {url: "http://forgejo-http.forgejo.svc.cluster.local:3000/okdp/okdp-input.git", branch: main, path: "projects/{project}"}
+  output: {url: "http://forgejo-http.forgejo.svc.cluster.local:3000/okdp/okdp-output.git", branch: main}

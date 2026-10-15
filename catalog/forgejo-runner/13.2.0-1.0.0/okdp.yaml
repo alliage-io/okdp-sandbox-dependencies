@@ -1,0 +1,221 @@
+# OKDP's part of forgejo-runner (okdp-compiler): no upstream chart, no
+# dependency in Chart.yaml, no platform value required (the proxy is read
+# when set); the mapping: OKDP's own objects, a Forgejo Actions runner
+# (forgejo-runner 13.2.0) implementing the runner contract of okdp-gitops.
+# ${{ ... }} is a CEL expression; the shell variables of the runner's
+# script stay literal. labels is the context's.
+
+roles: [ci-runner]
+
+vars:
+  fullname: ${{ okdpFullname() }}
+  # The runner contract of okdp-gitops, whose generated workflow runs
+  # `okdp-gitops compile --config <topology> --charts <chart cache>` with
+  # `shell: sh` on `runs-on: okdp-gitops`. The label's host executor runs the
+  # jobs in the runner container itself: the sandbox (kind) has no Docker
+  # daemon.
+  label: okdp-gitops:host
+  # The okdp-gitops binary, copied from its image by the init container,
+  # first on the jobs' PATH (runner.envs: the environment of host jobs).
+  binDir: /okdp/bin
+  topologyFile: /etc/okdp/gitops/topology.yaml
+  # The git credentials (username and password, or bearerToken), read by
+  # okdp-gitops from GITOPS_CREDENTIALS_DIR.
+  credentialsDir: /etc/okdp/gitops/credentials
+  chartCacheDir: /var/cache/okdp/charts
+  # The runner's own files: its configuration, the registration secret, and
+  # its data directory (HOME of the image, the jobs' working directories).
+  configFile: /etc/forgejo-runner/config.yml
+  tokenFile: /etc/forgejo-runner/registration/token
+  dataDir: /data
+  topology: >-
+    ${{ values.topology.endsWith('\n') ? values.topology : values.topology + '\n' }}
+  # The runner configuration (config.example.yaml of forgejo-runner 13.2.0).
+  # No server section: the connection to Forgejo is given to the daemon on
+  # its command line, its UUID derived from the registration secret at start.
+  config:
+    runner:
+      capacity: ${{ values.capacity }}
+      # The environment of the jobs, over the runner's own (host executor).
+      envs:
+        PATH: ${{ binDir }}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+        GITOPS_CREDENTIALS_DIR: ${{ credentialsDir }}
+        # The platform proxy: okdp-gitops pulls the charts of the checks.
+        $merge: ${{ platform.proxyEnv }}
+      # A compile takes minutes at most; a job still running when the pod
+      # stops gets shutdown_timeout to finish (terminationGracePeriodSeconds
+      # covers it).
+      timeout: 1h
+      shutdown_timeout: 2m
+      labels: ["${{ label }}"]
+    # No actions/cache server: the workflow uses no action, only okdp-gitops.
+    cache:
+      enabled: false
+    host:
+      workdir_parent: ${{ dataDir }}/.cache/act
+
+# OKDP's own objects, rendered by the umbrella (okdp.objects.yaml).
+objects:
+  - apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: ${{ fullname }}
+      labels: ${{ labels }}
+    # okdp-gitops talks to git only: no RBAC, and no API token in the pod,
+    # where the jobs run.
+    automountServiceAccountToken: false
+  # The runner configuration and the topology okdp-gitops reads (--config).
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: ${{ fullname }}
+      labels: ${{ labels }}
+    data:
+      config.yml: ${{ toYaml(config) + '\n' }}
+      topology.yaml: ${{ topology }}
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: ${{ fullname }}
+      labels: ${{ labels }}
+    spec:
+      # One runner: Forgejo knows it by the UUID of the registration secret.
+      # Recreate: the old pod is gone before the new one fetches jobs.
+      replicas: 1
+      strategy:
+        type: Recreate
+      selector:
+        matchLabels: ${{ selectorLabels }}
+      template:
+        metadata:
+          annotations:
+            # Both files are mounted with subPath, read at start only.
+            checksum/config: "${{ sha256(toJson({'config': config, 'topology': topology})) }}"
+          labels: ${{ labels }}
+        spec:
+          serviceAccountName: ${{ fullname }}
+          automountServiceAccountToken: false
+          # The jobs inherit the runner's environment: no Service variables.
+          enableServiceLinks: false
+          # runner.shutdown_timeout (2m), then some.
+          terminationGracePeriodSeconds: 150
+          securityContext:
+            # The runner image runs as 1000:1000 (HOME /data). The Secret
+            # volumes below are group-owned by fsGroup.
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          initContainers:
+            # okdp-gitops on the jobs' PATH: the binary of its image (static,
+            # go-git: no git, no other file needed).
+            - name: okdp-gitops
+              image: ${{ values.okdpGitopsImage.repository }}:${{ values.okdpGitopsImage.tag }}
+              imagePullPolicy: IfNotPresent
+              command: [cp, /usr/local/bin/okdp-gitops, "${{ binDir }}/okdp-gitops"]
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]
+              volumeMounts:
+                - name: okdp-bin
+                  mountPath: ${{ binDir }}
+          containers:
+            - name: runner
+              image: ${{ values.image.repository }}:${{ values.image.tag }}
+              imagePullPolicy: IfNotPresent
+              # dumb-init (the image's entrypoint) reaps what host jobs leave
+              # behind. The script derives the runner's UUID from the
+              # registration secret as Forgejo does (forgejo-cli actions
+              # register: its first 16 characters, as the UUID's 16 bytes),
+              # then runs the daemon with that connection: the token is read
+              # by the runner from the Secret file (--token-url).
+              command: [/usr/bin/dumb-init, --, /bin/bash, -c]
+              args:
+                - |
+                  set -euo pipefail
+                  token=${{ tokenFile }}
+                  secret=$(<"${token}")
+                  secret=${secret//[[:space:]]/}
+                  if [[ ! ${secret} =~ ^[0-9a-fA-F]{40}$ ]]; then
+                    echo "forgejo-runner: key ${{ values.registrationSecret.key }} of Secret ${{ values.registrationSecret.name }} must be 40 hexadecimal characters (the --secret of forgejo forgejo-cli actions register)" >&2
+                    exit 1
+                  fi
+                  hex=
+                  for ((i = 0; i < 16; i++)); do
+                    printf -v hex '%s%02x' "${hex}" "'${secret:i:1}"
+                  done
+                  uuid=${hex:0:8}-${hex:8:4}-${hex:12:4}-${hex:16:4}-${hex:20:12}
+                  exec forgejo-runner daemon --config ${{ configFile }} \
+                    --url "$1" --uuid "${uuid}" --token-url "file:${token}"
+                # $0 and $1 of the script.
+                - forgejo-runner
+                - ${{ values.forgejoUrl }}
+              # Pod Security "restricted". The root filesystem is read-only:
+              # the runner and its jobs write to /data, /tmp and the chart
+              # cache only.
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]
+              resources:
+                $if: ${{ values.resources }}
+                $value: ${{ values.resources }}
+              volumeMounts:
+                - name: data
+                  mountPath: ${{ dataDir }}
+                - name: tmp
+                  mountPath: /tmp
+                - name: okdp-bin
+                  mountPath: ${{ binDir }}
+                  readOnly: true
+                - name: config
+                  mountPath: ${{ configFile }}
+                  subPath: config.yml
+                  readOnly: true
+                - name: registration
+                  mountPath: /etc/forgejo-runner/registration
+                  readOnly: true
+                # A file, beside the credentials directory: a directory
+                # mounted inside a ConfigMap volume cannot be.
+                - name: config
+                  mountPath: ${{ topologyFile }}
+                  subPath: topology.yaml
+                  readOnly: true
+                - name: credentials
+                  mountPath: ${{ credentialsDir }}
+                  readOnly: true
+                - name: chart-cache
+                  mountPath: ${{ chartCacheDir }}
+          volumes:
+            - name: config
+              configMap:
+                name: ${{ fullname }}
+            - name: registration
+              secret:
+                secretName: ${{ values.registrationSecret.name }}
+                items:
+                  - {key: "${{ values.registrationSecret.key }}", path: token}
+                # Octal 0440: read by the group fsGroup (rendered as 288).
+                defaultMode: 0440
+            - name: credentials
+              secret:
+                secretName: ${{ values.credentialsSecret }}
+                defaultMode: 0440
+            - name: okdp-bin
+              emptyDir: {}
+            - name: data
+              emptyDir: {}
+            - name: tmp
+              emptyDir: {}
+            - name: chart-cache
+              emptyDir: {}
+
+# okdp.instance.yaml: no UI, no provided connection.
+instance:
+  usage: |
+    Forgejo Actions runner of ${{ values.forgejoUrl }} for OKDP's CI: the jobs `runs-on: okdp-gitops` run in its container (host executor), with `okdp-gitops` on their PATH, the topology `${{ topologyFile }}`, the git credentials of Secret `${{ values.credentialsSecret }}` (`GITOPS_CREDENTIALS_DIR=${{ credentialsDir }}`) and the chart cache `${{ chartCacheDir }}`. Its registration secret is key `${{ values.registrationSecret.key }}` of Secret `${{ values.registrationSecret.name }}`, registered on the Forgejo side with `forgejo forgejo-cli actions register --secret`.

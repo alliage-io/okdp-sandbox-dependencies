@@ -1,0 +1,131 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "forgejo-runner",
+  "type": "object",
+  "properties": {
+    "global": {
+      "type": "object",
+      "description": "Platform values (global.okdp): the context's layers (--context), the platform's then the higher levels', never an instance's."
+    },
+    "forgejoUrl": {
+      "type": "string",
+      "default": "http://forgejo-http.forgejo.svc.cluster.local:3000",
+      "pattern": "^https?://[^\\s]+$",
+      "title": "Forgejo URL",
+      "description": "URL the runner reaches Forgejo at (its Actions API), also the jobs' GITHUB_SERVER_URL. The default is the sandbox's Forgejo Service (component 20-forgejo).",
+      "x-ui-group": "Forgejo",
+      "x-ui-order": 1
+    },
+    "registrationSecret": {
+      "type": "object",
+      "title": "Registration secret",
+      "description": "Secret of the release namespace holding the offline registration secret of the runner: 40 hexadecimal characters, the --secret given to forgejo forgejo-cli actions register on the Forgejo side.",
+      "additionalProperties": false,
+      "x-ui-group": "Forgejo",
+      "x-ui-order": 2,
+      "properties": {
+        "name": {
+          "type": "string",
+          "default": "okdp-forgejo-runner",
+          "pattern": "^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$",
+          "title": "Secret"
+        },
+        "key": {
+          "type": "string",
+          "default": "secret",
+          "pattern": "^[-._a-zA-Z0-9]+$",
+          "title": "Key"
+        }
+      }
+    },
+    "topology": {
+      "type": "string",
+      "minLength": 1,
+      "title": "Topology",
+      "description": "The topology file of okdp-gitops, YAML text: the git repositories of the platform, of the projects and of the output of the deployments layout. Mounted at /etc/okdp/gitops/topology.yaml.",
+      "x-ui-group": "okdp-gitops",
+      "x-ui-order": 1,
+      "x-ui-widget": "textarea"
+    },
+    "credentialsSecret": {
+      "type": "string",
+      "default": "okdp-gitops-credentials",
+      "pattern": "^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$",
+      "title": "Git credentials Secret",
+      "description": "Secret of the release namespace with the git credentials of okdp-gitops (keys username and password, or bearerToken), allowed to push to the output repository. Mounted at /etc/okdp/gitops/credentials (GITOPS_CREDENTIALS_DIR).",
+      "x-ui-group": "okdp-gitops",
+      "x-ui-order": 2
+    },
+    "capacity": {
+      "type": "integer",
+      "default": 1,
+      "minimum": 1,
+      "title": "Capacity",
+      "description": "Jobs the runner runs at once. Every compile pushes to the output repository: above 1, two compiles can race and one push be refused.",
+      "x-ui-group": "Runner",
+      "x-ui-order": 1,
+      "x-ui-widget": "stepper",
+      "x-ui-columns": 2
+    },
+    "resources": {
+      "type": "object",
+      "default": {},
+      "title": "Resources",
+      "description": "Resources of the runner container, where the jobs (okdp-gitops compile) run (requests/limits).",
+      "x-ui-group": "Runner",
+      "x-ui-order": 2,
+      "x-ui-widget": "yaml",
+      "x-ui-advanced": true
+    },
+    "image": {
+      "type": "object",
+      "title": "Runner image",
+      "description": "Image of the runner (forgejo-runner, bash, sh): the jobs run in its container.",
+      "additionalProperties": false,
+      "x-ui-group": "Runner",
+      "x-ui-order": 3,
+      "x-ui-advanced": true,
+      "properties": {
+        "repository": {
+          "type": "string",
+          "default": "code.forgejo.org/forgejo/runner",
+          "minLength": 1,
+          "title": "Repository"
+        },
+        "tag": {
+          "type": "string",
+          "default": "13.2.0",
+          "minLength": 1,
+          "title": "Tag"
+        }
+      }
+    },
+    "okdpGitopsImage": {
+      "type": "object",
+      "title": "okdp-gitops image",
+      "description": "Image the okdp-gitops binary is copied from (/usr/local/bin/okdp-gitops, a static binary): an init container puts it on the jobs' PATH.",
+      "additionalProperties": false,
+      "x-ui-group": "okdp-gitops",
+      "x-ui-order": 3,
+      "x-ui-advanced": true,
+      "properties": {
+        "repository": {
+          "type": "string",
+          "default": "repo.alliage.io:8082/okdp/images/okdp-gitops",
+          "minLength": 1,
+          "title": "Repository"
+        },
+        "tag": {
+          "type": "string",
+          "default": "0.1.0",
+          "minLength": 1,
+          "title": "Tag"
+        }
+      }
+    }
+  },
+  "required": [
+    "topology"
+  ],
+  "additionalProperties": false
+}

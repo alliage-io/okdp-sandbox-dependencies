@@ -1,0 +1,11 @@
+forgejoUrl: https://git.example.test
+registrationSecret: {name: ci-runner-registration, key: runner-secret}
+credentialsSecret: ci-git-credentials
+capacity: 2
+resources:
+  requests: {cpu: 100m, memory: 256Mi}
+  limits: {memory: 1Gi}
+image: {repository: registry.example.test/forgejo/runner, tag: 13.2.0}
+okdpGitopsImage: {repository: registry.example.test/okdp/okdp-gitops, tag: 0.1.1}
+# No final line break: the ConfigMap's file gets one.
+topology: "platform: {url: https://git.example.test/okdp/okdp-platform.git, branch: main}\nprojects: {url: \"https://git.example.test/okdp/okdp-project-{project}.git\", branch: main}\noutput: {url: https://git.example.test/okdp/okdp-output.git, branch: main}"

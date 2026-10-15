@@ -1,0 +1,7 @@
+# A platform behind a proxy (--context, level 0): the jobs get it (runner.envs).
+global:
+  okdp:
+    proxy:
+      httpProxy: http://proxy.example.test:3128
+      httpsProxy: http://proxy.example.test:3128
+      noProxy: .svc,.cluster.local,git.example.test

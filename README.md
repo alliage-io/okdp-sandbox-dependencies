@@ -48,6 +48,7 @@ parameters, what changed from the KuboCD package, and its known gaps.
 | [`cnpg-postgresql`](./catalog/cnpg-postgresql/18.3.0-1.0.0) | `18.3.0-1.0.0` | none: OKDP's own objects | PostgreSQL cluster (CloudNativePG) with logical databases; one `database-server` output each |
 | [`coredns-patch`](./catalog/coredns-patch/1.0.0-1.0.0) | `1.0.0-1.0.0` | none: OKDP's own objects | CoreDNS patch resolving the ingress suffix to the ingress controller |
 | [`dns-server`](./catalog/dns-server/1.47.1-1.0.0) | `1.47.1-1.0.0` | `coredns` 1.47.1 (coredns.github.io) | Lightweight DNS server (CoreDNS) resolving the sandbox domain for local development |
+| [`forgejo-runner`](./catalog/forgejo-runner/13.2.0-1.0.0) | `13.2.0-1.0.0` | none: OKDP's own objects | Forgejo Actions runner of OKDP's CI (forgejo-runner 13.2.0, host executor): runs `okdp-gitops compile` on every push to the deployments repositories |
 | [`ingress-nginx`](./catalog/ingress-nginx/4.15.1-1.0.0) | `4.15.1-1.0.0` | `ingress-nginx` 4.15.1 (kubernetes.github.io) | NGINX ingress controller, in `nodePort`, `hostPort` or `metallb` mode (retired upstream: final release) |
 | [`keycloak`](./catalog/keycloak/7.3.2-1.0.0) | `7.3.2-1.0.0` | `keycloakx` 7.3.2 (codecentric.github.io) | Keycloak identity and access management on keycloakx and the official image (consumes a `database-server` connection) |
 | [`local-secrets-provider`](./catalog/local-secrets-provider/1.0.0-1.0.0) | `1.0.0-1.0.0` | none: OKDP's own objects | Secrets provisioned from a static list and replicated, a local stand-in for a secret manager |
