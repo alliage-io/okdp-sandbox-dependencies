@@ -1,0 +1,62 @@
+# OKDP's part of ingress-nginx (okdp-compiler): OKDP's defaults of its chart
+# and what an instance may override; then the mapping besides the chart's
+# values (values.cel.yaml). No platform value is required
+# (global.okdp.ingress.className defaults to nginx).
+
+roles: [ingress]
+defaults:
+  ingress-nginx: ingress-nginx.defaults.yaml
+upstream:
+  # The instance's upstream.ingress-nginx. What the platform relies on:
+  # - names (the controller Service <release>-controller is coredns-patch's
+  #   ingressService) and the namespace;
+  # - the IngressClass every platform chart uses (class, resource name,
+  #   controller value, and the controller flags that would change them or
+  #   the namespaces watched);
+  # - the exposure chosen by mode and published in okdp.instance.yaml
+  #   (Service on or off and its type, node ports, host networking, the
+  #   metallb IP: its metallb.universe.tf/ annotation keys contain dots,
+  #   written in brackets);
+  # - the hardening: no SSL passthrough (GIT-14), no snippet annotations and
+  #   no higher annotation risk level, the admission webhook on;
+  # - autoscaling (its templates read .Capabilities.APIVersions: kept off, so
+  #   that helm install and helm template render the same objects), and the
+  #   RBAC and ServiceAccount the controller needs.
+  # The mapping sets no list, so nothing is appended.
+  ingress-nginx:
+    protect: [fullnameOverride, nameOverride, namespaceOverride,
+              controller.ingressClass, controller.ingressClassResource.enabled,
+              controller.ingressClassResource.name, controller.ingressClassResource.controllerValue,
+              controller.scope,
+              controller.extraArgs.enable-ssl-passthrough, controller.extraArgs.ingress-class,
+              controller.extraArgs.controller-class, controller.extraArgs.watch-namespace,
+              controller.extraArgs.watch-namespace-selector,
+              controller.allowSnippetAnnotations, controller.config.allow-snippet-annotations,
+              controller.config.annotations-risk-level, controller.admissionWebhooks.enabled,
+              controller.service.enabled, controller.service.type, controller.service.nodePorts.http,
+              controller.service.nodePorts.https, controller.service.loadBalancerIP,
+              'controller.service.annotations["metallb.universe.tf/*"]',
+              controller.hostNetwork, controller.hostPort.enabled,
+              controller.autoscaling.enabled, defaultBackend.autoscaling.enabled,
+              rbac.create, serviceAccount.create]
+
+# The mapping of ingress-nginx: the values of the chart (the former KuboCD
+# module "main") are in values.cel.yaml, the fixed ones (hardening) in
+# ingress-nginx.defaults.yaml. ${{ ... }} is a CEL expression.
+vars:
+  # The IngressClass the platform charts use (global.okdp.ingress.className,
+  # default nginx).
+  class: ${{ first([global.okdp.?ingress.?className.orValue(''), 'nginx']) }}
+  # nodePort is the default mode: anything but metallb and hostPort.
+  nodePortMode: ${{ values.mode != 'metallb' && values.mode != 'hostPort' }}
+
+errors:
+  - $if: ${{ values.mode == 'metallb' && first([values.?endpoint.orValue('')]) == '' }}
+    $value: "ingress-nginx: endpoint is required in metallb mode"
+
+# okdp.instance.yaml: no UI, no provided connection.
+instance:
+  usage: |
+    NGINX Ingress Controller (${{ values.mode }} mode) for the IngressClass `${{ class }}`.
+    ${{ values.mode == 'nodePort' ? 'HTTP on node port ' + str(values.httpPort) + ', HTTPS on ' + str(values.httpsPort) + '.' : values.mode == 'metallb' ? 'LoadBalancer IP ' + str(values.endpoint) + '.' : 'Ports 80 and 443 on every node.' }}
+    In-cluster Service: `${{ release.name }}-controller.${{ release.namespace }}.svc.cluster.local`.

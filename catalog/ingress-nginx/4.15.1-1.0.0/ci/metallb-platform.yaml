@@ -1,0 +1,4 @@
+# Another suffix and IngressClass (--context, level 0, after platform.yaml).
+global:
+  okdp:
+    ingress: {suffix: example.test, className: public}

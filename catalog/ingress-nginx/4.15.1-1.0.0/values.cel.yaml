@@ -1,0 +1,25 @@
+# The values of the ingress-nginx chart computed from the parameters, over
+# ingress-nginx.defaults.yaml.
+ingress-nginx:
+  controller:
+    # The IngressClass the platform charts use (global.okdp.ingress.className).
+    ingressClass: ${{ class }}
+    ingressClassResource:
+      name: ${{ class }}
+      controllerValue: k8s.io/ingress-${{ class }}
+    # hostPort: host networking, ports 80/443 on every node, no Service.
+    hostNetwork: {$if: "${{ values.mode == 'hostPort' }}", $value: true}
+    hostPort: {$if: "${{ values.mode == 'hostPort' }}", enabled: true}
+    service:
+      # metallb: a LoadBalancer Service on the fixed IP endpoint.
+      annotations:
+        $if: ${{ values.mode == 'metallb' }}
+        metallb.universe.tf/loadBalancerIPs: ${{ values.endpoint }}
+        metallb.universe.tf/allow-shared-ip: "ingress"
+      enabled: {$if: "${{ values.mode == 'hostPort' }}", $value: false}
+      # nodePort: a NodePort Service on httpPort/httpsPort.
+      type: {$if: "${{ nodePortMode }}", $value: NodePort}
+      nodePorts:
+        $if: ${{ nodePortMode }}
+        http: ${{ str(values.httpPort) }}
+        https: ${{ str(values.httpsPort) }}

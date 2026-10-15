@@ -1,0 +1,19 @@
+apiVersion: v2
+name: ingress-nginx
+description: >-
+  NGINX Ingress Controller for Kubernetes, in one of three deployment modes: nodePort
+  (kind clusters), hostPort (host networking) or metallb (LoadBalancer on a fixed IP).
+  The upstream project is retired: 4.15.1 is its final release.
+type: application
+# <upstream>-<okdp semver>: catalog/ingress-nginx/<version>/, a new directory per version.
+version: 4.15.1-1.0.0
+appVersion: "4.15.1"
+home: https://okdp.io
+sources:
+  - https://github.com/OKDP/sandbox-dependencies
+  - https://github.com/kubernetes/ingress-nginx
+dependencies:
+  # The former KuboCD module main.
+  - name: ingress-nginx
+    repository: https://kubernetes.github.io/ingress-nginx
+    version: 4.15.1

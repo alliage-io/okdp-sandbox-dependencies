@@ -1,0 +1,2 @@
+# error: ingress-nginx: endpoint is required in metallb mode
+mode: metallb

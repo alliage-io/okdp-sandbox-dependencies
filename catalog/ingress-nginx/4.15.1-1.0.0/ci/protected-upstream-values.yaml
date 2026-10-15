@@ -1,0 +1,5 @@
+# error: ingress-nginx: upstream.ingress-nginx.controller.extraArgs.enable-ssl-passthrough: controller.extraArgs.enable-ssl-passthrough is set by the platform and cannot be changed
+upstream:
+  ingress-nginx:
+    controller:
+      extraArgs: {enable-ssl-passthrough: "true"}
