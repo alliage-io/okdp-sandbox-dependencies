@@ -1,0 +1,35 @@
+# OKDP's part of vault (okdp-compiler): the platform values it needs, OKDP's
+# defaults of its chart and what an instance may override; then the mapping
+# besides the chart's values (values.cel.yaml).
+
+roles: [secret-backend]
+dependsOn: [ingress]
+require:
+  - ingress.suffix
+  - ingress.className
+  - certificateIssuers.selfSigned.name
+defaults:
+  vault: vault.defaults.yaml
+upstream:
+  # The instance's upstream.vault. The names and the Service port the
+  # SecretStores reach Vault at (<release>-vault:8200), dev mode (the `dev`
+  # parameter only, GIT-08: a dev Vault has the root token "root"), and the
+  # ingress host and TLS the mapping computes. global (tlsDisable among
+  # others) is always protected. The mapping sets no list, so nothing is
+  # appended.
+  vault:
+    protect: [fullnameOverride, nameOverride, server.dev, server.service.port,
+              server.ingress.enabled, server.ingress.ingressClassName, server.ingress.hosts,
+              server.ingress.tls]
+
+# The mapping of vault: the values of the vault chart (the former KuboCD
+# module "main") are in values.cel.yaml.
+vars:
+  host: ${{ values.ingressHost }}.${{ global.okdp.ingress.suffix }}
+
+# okdp.instance.yaml: the Vault UI, no provided connection.
+instance:
+  url: https://${{ host }}
+  usage: >-
+    ${{ 'Vault is reachable at https://' + host + '.'
+        + (values.dev ? '\nIn dev mode the root token is "root" and the store is emptied on every restart.' : '') }}

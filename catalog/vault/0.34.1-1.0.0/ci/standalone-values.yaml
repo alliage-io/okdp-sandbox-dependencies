@@ -1,0 +1,4 @@
+dev: false
+ingressHost: secrets
+uiEnabled: false
+protected: false

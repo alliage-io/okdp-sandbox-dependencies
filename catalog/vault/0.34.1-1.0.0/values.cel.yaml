@@ -1,0 +1,41 @@
+# The values of the vault chart computed from the parameters, over
+# vault.defaults.yaml. The ingress and its TLS Secret <release>-tls, issued
+# by the platform's self-signed cluster issuer.
+vault:
+  server:
+    dev:
+      enabled: ${{ values.dev }}
+    # protected: okdp.io/protected: "true" on the server pod template; the
+    # tools chart's pod-template policy then refuses to delete the
+    # StatefulSet (see injector below).
+    extraLabels:
+      $if: ${{ values.protected }}
+      okdp.io/protected: "true"
+    ingress:
+      ingressClassName: ${{ global.okdp.ingress.className }}
+      annotations: ${{ platform.ingressAnnotations }}
+      hosts:
+        - host: ${{ host }}
+          paths: []
+      tls:
+        - secretName: ${{ release.name }}-tls
+          hosts:
+            - ${{ host }}
+  ui:
+    enabled: ${{ values.uiEnabled }}
+  # `protected` (the former KuboCD `protected: true`): okdp-lib-chart labelled
+  # the StatefulSet and the injector Deployment themselves; the chart has no
+  # label value for their metadata, only for their pods (server.extraLabels
+  # above, injector.extraLabels), so the label goes on the pod templates, and
+  # the tools chart's second ValidatingAdmissionPolicy (pod template labels)
+  # refuses their deletion (README, Known gaps). The CSI provider DaemonSet
+  # (csi.enabled, off) has a label value of its own: labelled as before.
+  injector:
+    extraLabels:
+      $if: ${{ values.protected }}
+      okdp.io/protected: "true"
+  csi:
+    daemonSet:
+      extraLabels:
+        $if: ${{ values.protected }}
+        okdp.io/protected: "true"

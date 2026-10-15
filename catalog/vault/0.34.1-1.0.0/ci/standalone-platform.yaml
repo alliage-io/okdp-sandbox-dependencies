@@ -1,0 +1,5 @@
+# Another suffix, IngressClass and issuer (--context, level 0, after platform.yaml).
+global:
+  okdp:
+    ingress: {suffix: example.test, className: traefik}
+    certificateIssuers: {selfSigned: {name: corp-issuer}}
