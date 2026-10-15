@@ -97,7 +97,7 @@ rather than appended to. An upstream value wins over the parameter it overlaps
 (`volume.replicas` over `volumeReplicas`). No key or value may contain `{{` (the schema
 and okdp-compile both refuse it).
 
-## Provided connection: `s3`, external only
+## Provided connection: `s3`
 
 One output named after the release, in `okdp.instance.yaml`:
 
@@ -109,9 +109,12 @@ One output named after the release, in `okdp.instance.yaml`:
   secretRef: {name: <outputSecretRef>}      # only when outputSecretRef is set
 ```
 
-`s3` has no internal naming convention: the store is a platform component in its own
-namespace, so consumers declare it in a connection file with these values and, as
-`secretRef`, a Secret of their namespace holding their own identity's keys (a grant here).
+`s3` has no internal naming convention: an instance of the same namespace references the
+store by the name of its output, the release, which resolves to these values (and
+`secretRef`, when set), and its release waits for the store's. The store is usually a
+platform component in its own namespace: consumers of other namespaces declare it in a
+connection file with these values and, as `secretRef`, a Secret of their namespace holding
+their own identity's keys (a grant here).
 
 ## Changes from the KuboCD package
 

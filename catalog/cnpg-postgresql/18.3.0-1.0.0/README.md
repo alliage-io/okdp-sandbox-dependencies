@@ -43,7 +43,7 @@ sets the password as soon as the Secret appears, and again when it changes. In t
 sandbox, `local-secrets-provider` sets it per Secret (`labels`), and
 kubernetes-replicator copies the labels to the replicas.
 
-## Provided connections: `database-server`, external only
+## Provided connections: `database-server`
 
 For each database, an output named `<release>-<database>` (`_` becomes `-`), in
 `okdp.instance.yaml`:
@@ -56,12 +56,14 @@ For each database, an output named `<release>-<database>` (`_` becomes `-`), in
   secretRef: {name: creds-keycloak-db}
 ```
 
-`database-server` has no internal naming convention (the contract's `x-okdp-internal`): the
-cluster lives in another namespace than its consumers and publishes several outputs. A
-consumer therefore references it through an **external connection**, a context file
-(`--context`, e.g. `platform/connections/<name>.yaml`) carrying these values, whose
-`secretRef` names a Secret of the consumer's namespace (here the replicated
-`creds-keycloak-db`):
+`database-server` has no internal naming convention (the contract's `x-okdp-internal`): a
+cluster publishes several outputs, one per database. An instance of the same namespace
+references one by its name (e.g. `db: demo-pg-hive`, the database `hive` of the release
+`demo-pg`): it resolves to the output's values and `secretRef`, and the consumer's release
+waits for the cluster's. A consumer of another namespace (the platform's cluster lives in
+`cnpg-system`) references an **external connection**, a context file (`--context`, e.g.
+`platform/connections/<name>.yaml`) carrying these values, whose `secretRef` names a Secret
+of the consumer's namespace (here the replicated `creds-keycloak-db`):
 
 ```yaml
 connections:
@@ -74,8 +76,9 @@ connections:
     secretRef: {name: creds-keycloak-db}
 ```
 
-The console offers these outputs from `okdp.instance.yaml` (no longer the descriptor
-ConfigMap `<release>-okdp`) and turns the selected one into such a connection file.
+The console's connection picker offers the outputs of the project's instances (their
+`okdp.instance.yaml`, no longer the descriptor ConfigMap `<release>-okdp`) and writes the
+name of the selected one in the parameter.
 
 ## Changes from the KuboCD package
 

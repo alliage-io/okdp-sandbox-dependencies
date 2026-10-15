@@ -1,8 +1,8 @@
 # Platform component 20-cnpg-postgresql: the OKDP package cnpg-postgresql (catalog/cnpg-postgresql/18.3.0-1.0.0).
 #   instance.yaml: {name: cnpg-postgresql, project: cnpg-system, service: cnpg-postgresql,
 #                   version: "18.3.0-1.0.0", connections: []}
-# Publishes the database-server output cnpg-system-cnpg-postgresql-keycloak (external-only
-# contract: 20-keycloak declares it as a connection).
+# Publishes the database-server output cnpg-system-cnpg-postgresql-keycloak (20-keycloak,
+# in another namespace, declares it as a connection).
 databases:
 - name: keycloak
   owner:

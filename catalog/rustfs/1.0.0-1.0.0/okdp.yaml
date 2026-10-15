@@ -407,13 +407,15 @@ instance:
     - Console: https://${{ consoleHost }}
 
     The s3 output `${{ release.name }}` is published with the credentials Secret
-    `${{ credentialsSecret }}`${{ values.outputSecretRef == '' ? ' (read/list/write on every\nbucket)' : '' }}. s3 connections are external only: consumers declare a connection
-    file (`projects/<project>/connections/<name>.yaml`) with these endpoints and
-    their own identity (a grant of this store).
+    `${{ credentialsSecret }}`${{ values.outputSecretRef == '' ? ' (read/list/write on every\nbucket)' : '' }}. An instance of this namespace references it by that name;
+    consumers of another namespace declare a connection file
+    (`projects/<project>/connections/<name>.yaml`) with these endpoints and their
+    own identity (a grant of this store).
 
-# The connection this instance publishes, named after the release. s3 is an
-# external-only contract (no internal naming convention): consumers declare a
-# connection file with these values and their own identity.
+# The connection this instance publishes, named after the release. s3 has no
+# internal naming convention: an instance of the namespace references it by that
+# name, consumers of another namespace declare a connection file with these
+# values and their own identity.
 provides:
   - contract: s3
     values:

@@ -35,9 +35,9 @@ vars:
     |---|---|---|---|
     ${{ databases.map(d, '| `' + d.object + '` | `' + d.name + '` | `' + d.owner + '` | `' + d.secret + '` |').join('\n') }}
 
-    `database-server` is an external-only contract: a consumer in another namespace
-    declares the connection in a connection file with these values, and its credentials
-    Secret must exist in the consumer's namespace (replicated or delivered by ESO).
+    An instance of this namespace references a connection by its name; a consumer in
+    another namespace declares it in a connection file with these values, and its
+    credentials Secret must exist in the consumer's namespace (replicated or delivered by ESO).
 
 # OKDP's own objects, rendered by the umbrella (okdp.objects.yaml).
 objects:
@@ -97,7 +97,8 @@ instance:
 
 # One database-server connection per database, named <release>-<database>,
 # the owner's Secret as its secretRef. database-server has no internal naming
-# convention: a consumer declares it in a connection file.
+# convention: an instance of the namespace references an output by its name, a
+# consumer of another namespace declares it in a connection file.
 provides:
   - $for: db in databases
     $each:

@@ -374,8 +374,9 @@ instance:
     Access the console at https://${{ consoleHost }} (user `${{ values.username }}`).
     S3 API: https://${{ apiHost }} (in-cluster `${{ internalUrl }}`), path-style, region us-east-1.
 
-    `s3` is an external-only contract: consumers in other namespaces declare this store
-    in a connection file, with their own identity (a grant of this store) as secretRef.
+    An instance of this namespace references this store by the release name; consumers
+    in other namespaces declare it in a connection file, with their own identity (a grant
+    of this store) as secretRef.
 
 # One s3 output named after the release. No credentials by default: each
 # consumer brings its own identity (grants); a secretRef only when one is given,

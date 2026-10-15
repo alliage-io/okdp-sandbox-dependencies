@@ -7,9 +7,9 @@
 # whenever it changes and removes what it does not declare: the console's service
 # account roles and user attributes are declared below (docs/no-kubocd-e2e.md, K1).
 #
-# The database is a database-server connection, an external-only contract: the
-# platform's connection file platform/connections/keycloak-db.yaml (a context layer,
-# never these values, which may not set connections):
+# The database is a database-server output of 20-cnpg-postgresql, in another namespace
+# (cnpg-system): the platform's connection file platform/connections/keycloak-db.yaml (a
+# context layer, never these values, which may not set connections):
 #   connections:
 #     keycloak-db:
 #       contract: database-server

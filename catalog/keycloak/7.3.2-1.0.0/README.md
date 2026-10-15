@@ -118,10 +118,11 @@ another realm, of `realm-management`. The user profile is always part of the rea
 
 ## The database connection
 
-`database-server` is an external-only contract: `db` names a connection declared in a
-context file (`--context`: the platform's `platform/connections/<name>.yaml`, a
-project's, or the instance's own, never its values), e.g. for the sandbox's
-cnpg-postgresql:
+`database-server` has no internal naming convention: `db` names the output of an
+instance of the same namespace (a cnpg-postgresql database, `<release>-<database>`), or a
+connection declared in a context file (`--context`: the platform's
+`platform/connections/<name>.yaml`, a project's, or the instance's own, never its values),
+e.g. for the sandbox's cnpg-postgresql, in another namespace (`cnpg-system`):
 
 ```yaml
 connections:
