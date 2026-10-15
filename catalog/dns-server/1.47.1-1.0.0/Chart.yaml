@@ -1,0 +1,19 @@
+apiVersion: v2
+name: dns-server
+description: >-
+  Lightweight DNS server (CoreDNS) for local development: answers the platform
+  ingress suffix (*.<global.okdp.ingress.suffix>) with a fixed address, forwards the
+  other names, exposed on a NodePort so the host resolver can use it.
+type: application
+# <upstream>-<okdp semver>: catalog/dns-server/<version>/, a new directory per version.
+version: 1.47.1-1.0.0
+appVersion: "1.47.1"
+home: https://okdp.io
+sources:
+  - https://github.com/OKDP/sandbox-dependencies
+  - https://github.com/coredns/helm
+dependencies:
+  # The official CoreDNS chart (the former KuboCD module main).
+  - name: coredns
+    repository: https://coredns.github.io/helm
+    version: 1.47.1

@@ -1,0 +1,3 @@
+# error: dns-server: forwarders needs at least one upstream DNS server
+# null deletes the default list; [] is refused by the schema (minItems).
+forwarders: null

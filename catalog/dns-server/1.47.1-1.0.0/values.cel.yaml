@@ -1,0 +1,40 @@
+# The values of the CoreDNS chart computed from the parameters, over
+# coredns.defaults.yaml. Two server blocks on port 53: the ingress suffix,
+# answered by the template plugin (every name under it, and the suffix
+# itself, resolves to target; other record types get an empty answer), and
+# the root zone, forwarded. No Kubernetes plugin, so no RBAC.
+coredns:
+  fullnameOverride: ${{ release.name }}
+  servers:
+    - zones:
+        - zone: ${{ suffix }}.
+          use_tcp: true
+      port: 53
+      nodePort: ${{ values.nodePort }}
+      plugins:
+        - name: errors
+        - name: log
+        - name: template
+          parameters: IN ${{ rrType }} ${{ suffix }}
+          configBlock: answer "{{ .Name }} 60 IN ${{ rrType }} ${{ values.target }}"
+        - name: template
+          parameters: ANY ANY ${{ suffix }}
+          configBlock: rcode NOERROR
+    - zones:
+        - zone: .
+          use_tcp: true
+      port: 53
+      nodePort: ${{ values.nodePort }}
+      plugins:
+        - name: errors
+        - name: health
+          configBlock: lameduck 5s
+        - name: ready
+        - name: log
+        - name: forward
+          parameters: . ${{ forwarders.join(' ') }}
+        - name: cache
+          parameters: 30
+        - name: loop
+        - name: reload
+        - name: loadbalance

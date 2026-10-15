@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "dns-server",
+  "type": "object",
+  "properties": {
+    "global": {
+      "type": "object",
+      "description": "Platform values (global.okdp): the context's layers (--context), the platform's then the higher levels', never an instance's."
+    },
+    "target": {
+      "type": "string",
+      "default": "127.0.0.1",
+      "title": "Target address",
+      "description": "Address returned for every name under the ingress suffix (IPv4, or IPv6).",
+      "x-ui-group": "DNS",
+      "x-ui-order": 1,
+      "x-ui-columns": 2
+    },
+    "nodePort": {
+      "type": "integer",
+      "default": 30053,
+      "minimum": 30000,
+      "maximum": 32766,
+      "title": "Node port",
+      "description": "Node port of the DNS service, UDP and TCP.",
+      "x-ui-group": "DNS",
+      "x-ui-order": 2,
+      "x-ui-columns": 2
+    },
+    "forwarders": {
+      "type": "array",
+      "default": ["8.8.8.8", "8.8.4.4"],
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1},
+      "title": "Forwarders",
+      "description": "Upstream DNS servers for the names outside the ingress suffix.",
+      "x-ui-group": "DNS",
+      "x-ui-order": 3,
+      "x-ui-advanced": true
+    },
+    "upstream": {
+      "type": "object",
+      "title": "Upstream chart values",
+      "description": "Values of the upstream chart of the service, merged over the values it computes: any upstream parameter can be set, except the ones the platform relies on. Maps merge, lists and scalars replace. No key or value may contain '{{'.",
+      "default": {},
+      "x-ui-group": "Upstream values",
+      "x-ui-order": 1,
+      "x-ui-advanced": true,
+      "additionalProperties": false,
+      "properties": {
+        "coredns": {
+          "type": "object",
+          "title": "coredns",
+          "description": "Values of the coredns chart 1.47.1 (https://coredns.github.io/helm), for example image, resources, nodeSelector, tolerations, zoneFiles, extra server blocks. Refused: fullnameOverride, nameOverride, deployment.enabled/skipConfig/name/selector, service.name, serviceType, isClusterService, rbac.create, hpa.enabled. Appended to the server blocks the service computes: servers.",
+          "default": {},
+          "x-ui-widget": "yaml",
+          "x-ui-order": 1,
+          "allOf": [
+            {
+              "$ref": "#/definitions/noTemplate"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "noTemplate": {
+      "description": "No key or string value, at any depth, contains '{{': upstream charts pass some values to tpl.",
+      "not": {
+        "type": "string",
+        "pattern": "\\{\\{"
+      },
+      "propertyNames": {
+        "not": {
+          "pattern": "\\{\\{"
+        }
+      },
+      "additionalProperties": {
+        "$ref": "#/definitions/noTemplate"
+      },
+      "items": {
+        "$ref": "#/definitions/noTemplate"
+      }
+    }
+  }
+}

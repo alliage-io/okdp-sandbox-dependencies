@@ -1,0 +1,50 @@
+# OKDP's part of dns-server (okdp-compiler): the platform values it needs,
+# OKDP's defaults of its chart and what an instance may override; then the
+# mapping besides the chart's values (values.cel.yaml).
+
+roles: [dns-server]
+require:
+  - ingress.suffix
+defaults:
+  coredns: coredns.defaults.yaml
+upstream:
+  # The instance's upstream.coredns. What the platform relies on: the names
+  # and the Deployment selector (app.kubernetes.io/name: dns-server,
+  # immutable), the NodePort Service the host resolver points at, the
+  # ConfigMap carrying the computed server blocks (deployment.enabled,
+  # skipConfig), isClusterService (labels and selector of a cluster DNS),
+  # rbac.create (a ClusterRole, while this server needs none) and
+  # hpa.enabled (its template reads .Capabilities: kept off, so that
+  # helm install and helm template render the same objects).
+  coredns:
+    protect: [fullnameOverride, nameOverride, deployment.enabled, deployment.skipConfig,
+              deployment.name, deployment.selector, service.name, serviceType,
+              isClusterService, rbac.create, hpa.enabled]
+    # An instance adds server blocks (another zone, a conditional forward)
+    # next to the two computed from the parameters.
+    append: [servers]
+
+# The mapping of dns-server: the values of the CoreDNS chart (the former
+# KuboCD module "main", which ran dnsmasq with address=/<suffix>/<target>
+# and two upstream servers) are in values.cel.yaml, the fixed ones in
+# coredns.defaults.yaml. ${{ ... }} is a CEL expression; CoreDNS's own
+# {{ .Name }} (template plugin) stays literal.
+vars:
+  # The ingress suffix as a zone name, without a trailing dot.
+  suffix: >-
+    ${{ global.okdp.ingress.suffix.endsWith('.')
+        ? global.okdp.ingress.suffix.substring(0, global.okdp.ingress.suffix.size() - 1)
+        : global.okdp.ingress.suffix }}
+  # The record type of target: AAAA for an IPv6 address, else A.
+  rrType: "${{ values.target.contains(':') ? 'AAAA' : 'A' }}"
+  forwarders: ${{ values.?forwarders.orValue([]) }}
+
+errors:
+  - $if: ${{ forwarders.size() == 0 }}
+    $value: "dns-server: forwarders needs at least one upstream DNS server"
+
+# okdp.instance.yaml: no UI, no provided connection.
+instance:
+  usage: |
+    DNS server for local development: every name under `${{ global.okdp.ingress.suffix }}` resolves to `${{ values.target }}`, other names are forwarded to ${{ forwarders.join(', ') }}.
+    Point the host resolver at a node on port ${{ values.nodePort }} (UDP and TCP).
