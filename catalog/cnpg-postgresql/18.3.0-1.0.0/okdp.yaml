@@ -1,0 +1,111 @@
+# OKDP's part of cnpg-postgresql (okdp-compiler): no upstream chart, no
+# dependency in Chart.yaml. No platform value is required
+# (global.okdp.storageClass.data is optional: the cluster default class when
+# unset).
+
+roles: [database-server]
+dependsOn: [pg-operator, external-secrets]
+
+# The mapping of cnpg-postgresql: one PostgreSQL cluster managed by the
+# CloudNativePG operator, its logical databases (OKDP's own objects), and one
+# database-server connection per database. Former module "main", the chart
+# oci://quay.io/okdp/charts/cnpg-postgresql 0.1.0, whose templates are taken in
+# here: it checked the owner Secrets with `lookup`, which renders nothing under
+# Argo CD. A missing Secret now shows up in the Cluster status instead.
+# labels is the context's.
+vars:
+  clusterName: ${{ okdpFullname() }}
+  # host of the read-write Service CloudNativePG creates: <cluster>-rw.
+  host: ${{ clusterName }}-rw.${{ release.namespace }}.svc.cluster.local
+  # The cluster default class when unset.
+  storageClass: ${{ global.okdp.?storageClass.?data.orValue('') }}
+  # The databases: their name in Kubernetes (Database object, connection),
+  # where "_" becomes "-".
+  databases:
+    - $for: db in values.databases
+      $each:
+        name: ${{ db.name }}
+        object: ${{ okdpFullname(db.name.replace('_', '-')) }}
+        owner: ${{ db.owner.username }}
+        secret: ${{ db.owner.passwordSecret }}
+        schemas: ${{ db.?schemas.orValue([]) }}
+  # The connections table of the usage text.
+  outputsText: |-
+    | Connection | Database | Owner | Credentials Secret |
+    |---|---|---|---|
+    ${{ databases.map(d, '| `' + d.object + '` | `' + d.name + '` | `' + d.owner + '` | `' + d.secret + '` |').join('\n') }}
+
+    `database-server` is an external-only contract: a consumer in another namespace
+    declares the connection in a connection file with these values, and its credentials
+    Secret must exist in the consumer's namespace (replicated or delivered by ESO).
+
+# OKDP's own objects, rendered by the umbrella (okdp.objects.yaml).
+objects:
+  - apiVersion: postgresql.cnpg.io/v1
+    kind: Cluster
+    metadata:
+      name: ${{ clusterName }}
+      labels: ${{ labels }}
+    spec:
+      instances: ${{ values.instances }}
+      imageName: ghcr.io/cloudnative-pg/postgresql:18.3
+      inheritedMetadata:
+        labels:
+          app.kubernetes.io/instance: ${{ release.name }}
+      storage:
+        size: ${{ values.storageSize }}
+        storageClass:
+          $if: ${{ storageClass != '' }}
+          $value: ${{ str(storageClass) }}
+      # One login role per database owner, its password from the owner Secret.
+      managed:
+        $if: ${{ databases.size() > 0 }}
+        roles:
+          - $for: db in databases
+            $each:
+              name: ${{ db.owner }}
+              ensure: present
+              login: true
+              passwordSecret:
+                name: ${{ db.secret }}
+  - $for: db in databases
+    $each:
+      apiVersion: postgresql.cnpg.io/v1
+      kind: Database
+      metadata:
+        name: ${{ db.object }}
+        labels: ${{ labels }}
+      spec:
+        name: ${{ db.name }}
+        owner: ${{ db.owner }}
+        databaseReclaimPolicy: ${{ values.databaseReclaimPolicy }}
+        cluster:
+          name: ${{ clusterName }}
+        schemas:
+          $if: ${{ db.schemas.size() > 0 }}
+          $value:
+            - $for: s in db.schemas
+              $each:
+                name: ${{ s }}
+                owner: ${{ db.owner }}
+                ensure: present
+
+# okdp.instance.yaml: no UI.
+instance:
+  usage: |
+    PostgreSQL cluster `${{ clusterName }}` (CloudNativePG), read-write endpoint `${{ host }}:5432`.${{ databases.size() > 0 ? '\n\n' + outputsText : '' }}
+
+# One database-server connection per database, named <release>-<database>,
+# the owner's Secret as its secretRef. database-server has no internal naming
+# convention: a consumer declares it in a connection file.
+provides:
+  - $for: db in databases
+    $each:
+      contract: database-server
+      name: ${{ db.object }}
+      secretRef: {name: "${{ db.secret }}"}
+      values:
+        engine: postgresql
+        host: ${{ host }}
+        port: 5432
+        dbName: ${{ db.name }}

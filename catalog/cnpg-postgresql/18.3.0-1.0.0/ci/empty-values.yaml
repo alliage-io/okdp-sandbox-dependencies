@@ -1,0 +1,2 @@
+# No database: the cluster alone.
+databases: []

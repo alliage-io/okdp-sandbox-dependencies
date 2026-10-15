@@ -1,0 +1,3 @@
+databases:
+  - name: keycloak
+    owner: {username: keycloak, passwordSecret: creds-keycloak-db}

@@ -1,0 +1,6 @@
+# The platform values of every case (--context, level 0). No value is
+# required: without global.okdp.storageClass.data, the cluster's default
+# storage class.
+global:
+  okdp:
+    ingress: {suffix: okdp.sandbox, className: nginx}

@@ -1,0 +1,15 @@
+apiVersion: v2
+name: cnpg-postgresql
+description: >-
+  One PostgreSQL cluster managed by the CloudNativePG operator, hosting several logical
+  databases, each with its owner role. Publishes one database-server connection per
+  database, the owner's credentials Secret as its secretRef.
+type: application
+# <upstream>-<okdp semver>: catalog/cnpg-postgresql/<version>/, a new directory per version.
+version: 18.3.0-1.0.0
+appVersion: "18.3.0"
+home: https://okdp.io
+sources:
+  - https://github.com/OKDP/sandbox-dependencies
+  - https://cloudnative-pg.io/
+# No dependency: the Cluster and the Databases are OKDP's own objects (okdp.yaml).

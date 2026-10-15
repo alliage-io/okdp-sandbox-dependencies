@@ -1,0 +1,4 @@
+# The sandbox's storage classes (--context, level 0, after platform.yaml).
+global:
+  okdp:
+    storageClass: {data: standard, workspace: standard}
